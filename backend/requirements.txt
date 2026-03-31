@@ -1,0 +1,40 @@
+# Web framework
+fastapi>=0.110
+uvicorn[standard]>=0.27
+python-multipart>=0.0.6
+
+# AI / LLM
+anthropic>=0.40
+openai>=1.12
+
+# RAG / Vector DB
+chromadb>=0.4
+
+# Document parsing
+PyPDF2>=3.0
+python-docx>=1.0
+chardet>=5.0
+
+# Resume export
+weasyprint>=60.0
+markdown>=3.5
+
+# Voice (iFlytek WebSocket)
+websockets>=12.0
+
+# Pydantic + settings
+pydantic>=2.5
+pydantic-settings>=2.1
+
+# HTTP client
+httpx>=0.26
+
+# Web search
+duckduckgo-search>=8.0
+
+# Utilities
+python-dotenv>=1.0
+
+# Testing
+pytest>=8.0
+pytest-asyncio>=0.23
