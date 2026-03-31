@@ -40,6 +40,12 @@ app.add_middleware(
 )
 
 
+# Railway health check（根路径也返回 200）
+@app.get("/")
+async def root():
+    return {"status": "ok"}
+
+
 def register_routers():
     from app.api import chat, documents, resume, interview, voice, health, settings_api
     app.include_router(health.router, prefix="/api", tags=["health"])
