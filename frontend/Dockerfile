@@ -15,7 +15,8 @@ COPY nginx.conf /etc/nginx/templates/default.conf.template
 # 复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
 
-EXPOSE 3000
+ENV PORT=3000
+EXPOSE ${PORT}
 
 # nginx 官方镜像的 entrypoint 会自动处理 /etc/nginx/templates/ 中的
 # .template 文件，用环境变量替换 ${VAR} 后输出到 /etc/nginx/conf.d/

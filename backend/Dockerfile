@@ -16,6 +16,8 @@ COPY . .
 # 创建数据目录
 RUN mkdir -p data/chroma_db data/uploads
 
-EXPOSE 8000
+ENV PORT=8000
+EXPOSE ${PORT}
 
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Railway 通过 $PORT 环境变量指定端口
+CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
