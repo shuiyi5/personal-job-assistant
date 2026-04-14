@@ -23,5 +23,5 @@ ENV BACKEND_URL=http://localhost:8000
 
 EXPOSE ${PORT}
 
-# 用 envsubst 替换环境变量后启动 nginx
-CMD ["/bin/sh", "-c", "envsubst '${PORT} ${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+# 用 envsubst 只替换 ${BACKEND_URL}，避免破坏 nginx 内置变量（如 $host、$uri 等）
+CMD ["/bin/sh", "-c", "envsubst '${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
