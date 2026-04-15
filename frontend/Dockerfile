@@ -15,13 +15,16 @@ RUN rm /etc/nginx/conf.d/default.conf
 # 复制 nginx 配置模板 (包含 ${PORT} 和 ${BACKEND_URL} 占位符)
 COPY nginx.conf /etc/nginx/nginx.conf.template
 
+# 复制 entrypoint 脚本
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
 # 复制构建产物
 COPY --from=builder /app/dist /usr/share/nginx/html
 
 ENV PORT=3000
 ENV BACKEND_URL=http://localhost:8000
 
-EXPOSE ${PORT}
+EXPOSE 3000
 
-# 用 envsubst 替换环境变量后启动 nginx
-CMD ["/bin/sh", "-c", "envsubst '${PORT} ${BACKEND_URL}' < /etc/nginx/nginx.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
+ENTRYPOINT ["/entrypoint.sh"]
