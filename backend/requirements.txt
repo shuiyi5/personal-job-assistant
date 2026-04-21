@@ -7,8 +7,12 @@ python-multipart>=0.0.6
 anthropic>=0.40
 openai>=1.12
 
-# RAG / Vector DB
-chromadb>=0.4
+# PostgreSQL + pgvector (替换 ChromaDB)
+psycopg2-binary>=2.9
+pgvector>=0.3
+
+# Embedding
+sentence-transformers>=3.0
 
 # Document parsing
 PyPDF2>=3.0
