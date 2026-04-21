@@ -15,8 +15,8 @@ PyPDF2>=3.0
 python-docx>=1.0
 chardet>=5.0
 
-# Resume export
-weasyprint>=60.0
+# Resume export (weasyprint 需要系统依赖, Railway 部署时可选)
+# weasyprint>=60.0
 markdown>=3.5
 
 # Voice (iFlytek WebSocket)

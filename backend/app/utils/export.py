@@ -314,8 +314,11 @@ def _render_resume_html(data: dict, template_id: str) -> str:
 # ── Markdown 导出 (旧版兼容) ──────────────────────────────
 
 def markdown_to_pdf(content: str) -> str:
-    """Markdown → PDF, 返回文件路径"""
-    from weasyprint import HTML
+    """Markdown → PDF, 返回文件路径 (需要 weasyprint)"""
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        raise RuntimeError("PDF 导出需要安装 weasyprint 及其系统依赖")
 
     html_body = md.markdown(content, extensions=["tables", "fenced_code", "nl2br"])
     full_html = f"""<!DOCTYPE html>
@@ -379,8 +382,11 @@ def markdown_to_docx(content: str) -> str:
 # ── 结构化数据导出 ──────────────────────────────────────
 
 def structured_to_pdf(data: dict, template_id: str = "professional") -> str:
-    """结构化简历数据 + 模板 → PDF"""
-    from weasyprint import HTML
+    """结构化简历数据 + 模板 → PDF (需要 weasyprint)"""
+    try:
+        from weasyprint import HTML
+    except ImportError:
+        raise RuntimeError("PDF 导出需要安装 weasyprint 及其系统依赖")
 
     css = TEMPLATE_CSS.get(template_id, TEMPLATE_CSS["professional"])
     body_html = _render_resume_html(data, template_id)
