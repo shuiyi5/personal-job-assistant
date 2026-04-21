@@ -1,5 +1,6 @@
-"""设置端点 - 读取/更新 .env 配置"""
+"""设置端点 - 读取/更新配置 (支持 .env 和 JSON 持久化)"""
 
+import json
 import os
 import re
 from pathlib import Path
@@ -12,8 +13,10 @@ from app.config.settings import get_settings
 
 router = APIRouter()
 
-# .env 文件路径 (相对于 backend/ 目录)
+# .env 文件路径 (本地开发)
 ENV_PATH = Path(__file__).resolve().parent.parent.parent / ".env"
+# JSON 配置文件路径 (Docker/Railway 部署)
+CONFIG_PATH = Path("./data/settings.json")
 
 # 需要暴露给前端的配置项 (不含敏感的非 LLM 配置)
 PROVIDER_CONFIGS = {
@@ -37,6 +40,34 @@ def _mask_key(value: str) -> str:
     return value[:4] + "*" * (len(value) - 8) + value[-4:]
 
 
+def _read_config() -> dict[str, str]:
+    """读取配置: 优先 JSON 文件, 回退到 .env 文件, 最后回退到环境变量"""
+    result: dict[str, str] = {}
+
+    # 1. 尝试读取 JSON 配置文件 (Docker/Railway)
+    if CONFIG_PATH.exists():
+        try:
+            with open(CONFIG_PATH, 'r', encoding='utf-8') as f:
+                return json.load(f)
+        except Exception:
+            pass
+
+    # 2. 尝试读取 .env 文件 (本地开发)
+    if ENV_PATH.exists():
+        result = _read_env()
+
+    # 3. 回退到环境变量
+    if not result:
+        for key in ["LLM_PROVIDER", "LLM_MODEL"] + [
+            f for conf in PROVIDER_CONFIGS.values() for f in conf["fields"]
+        ]:
+            val = os.getenv(key)
+            if val:
+                result[key] = val
+
+    return result
+
+
 def _read_env() -> dict[str, str]:
     """读取 .env 文件, 返回 {KEY: value} 字典"""
     result: dict[str, str] = {}
@@ -49,17 +80,31 @@ def _read_env() -> dict[str, str]:
         m = re.match(r"^([A-Z_][A-Z0-9_]*)=(.*)", line)
         if m:
             val = m.group(2).strip()
-            # 去除行内注释 (未被引号包裹的 # 后面的内容)
             if "#" in val and not val.startswith(("'", '"')):
                 val = val[:val.index("#")].strip()
             result[m.group(1)] = val
     return result
 
 
+def _save_config(updates: dict[str, str]) -> None:
+    """保存配置: 写入 JSON 文件, 同时更新环境变量"""
+    existing = _read_config()
+    existing.update(updates)
+
+    CONFIG_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with open(CONFIG_PATH, 'w', encoding='utf-8') as f:
+        json.dump(existing, f, ensure_ascii=False, indent=2)
+
+    for k, v in updates.items():
+        os.environ[k] = v
+
+    if ENV_PATH.exists():
+        _write_env(updates)
+
+
 def _write_env(updates: dict[str, str]) -> None:
     """更新 .env 文件中指定的键值对, 保留注释和格式"""
     if not ENV_PATH.exists():
-        # 如果 .env 不存在, 直接写入
         lines = [f"{k}={v}" for k, v in updates.items()]
         ENV_PATH.write_text("\n".join(lines) + "\n", encoding="utf-8")
         return
@@ -78,7 +123,6 @@ def _write_env(updates: dict[str, str]) -> None:
                 continue
         new_lines.append(line)
 
-    # 追加 .env 中不存在的新键
     for k, v in remaining.items():
         new_lines.append(f"{k}={v}")
 
@@ -86,9 +130,8 @@ def _write_env(updates: dict[str, str]) -> None:
 
 
 def _reload_settings() -> None:
-    """清除缓存, 让下一次 get_settings() 重新读取 .env"""
+    """清除缓存, 让下一次 get_settings() 重新读取"""
     get_settings.cache_clear()
-    # 同时更新模块级别的 settings 引用
     import app.config.settings as mod
     mod.settings = get_settings()
 
@@ -98,13 +141,13 @@ def _reload_settings() -> None:
 class SettingsResponse(BaseModel):
     llm_provider: str
     llm_model: str
-    providers: dict  # { provider_name: { field_name: masked_value } }
+    providers: dict
 
 
 class SettingsUpdate(BaseModel):
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None
-    env_vars: Optional[dict[str, str]] = None  # { "MOONSHOT_API_KEY": "sk-xxx", ... }
+    env_vars: Optional[dict[str, str]] = None
 
 
 # ── Endpoints ────────────────────────────────────────
@@ -112,7 +155,7 @@ class SettingsUpdate(BaseModel):
 @router.get("/settings")
 async def get_current_settings() -> SettingsResponse:
     """获取当前设置 (API Key 脱敏)"""
-    env = _read_env()
+    env = _read_config()
     provider = env.get("LLM_PROVIDER", "claude")
     model = env.get("LLM_MODEL", "")
 
@@ -121,7 +164,6 @@ async def get_current_settings() -> SettingsResponse:
         fields: dict[str, str] = {}
         for f in conf["fields"]:
             raw = env.get(f, "")
-            # API Key 字段脱敏
             if "API_KEY" in f or "SECRET" in f:
                 fields[f] = _mask_key(raw)
             else:
@@ -133,7 +175,7 @@ async def get_current_settings() -> SettingsResponse:
 
 @router.put("/settings")
 async def update_settings(req: SettingsUpdate) -> dict:
-    """更新设置并写入 .env 文件"""
+    """更新设置并持久化"""
     updates: dict[str, str] = {}
 
     if req.llm_provider is not None:
@@ -142,13 +184,12 @@ async def update_settings(req: SettingsUpdate) -> dict:
         updates["LLM_MODEL"] = req.llm_model
     if req.env_vars:
         for k, v in req.env_vars.items():
-            # 跳过脱敏过的值 (包含 ***), 表示用户没有修改
             if "***" in v:
                 continue
             updates[k] = v
 
     if updates:
-        _write_env(updates)
+        _save_config(updates)
         _reload_settings()
 
     return {"status": "ok", "updated_keys": list(updates.keys())}
