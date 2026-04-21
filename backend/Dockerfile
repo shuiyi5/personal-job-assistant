@@ -1,14 +1,15 @@
-FROM python:3.11-slim
+FROM python:3.11
 
 # WeasyPrint 系统依赖
-RUN apt-get update && apt-get install -y --no-install-recommends \
+RUN apt-get update -y && \
+    apt-get install -y --no-install-recommends \
     libpango-1.0-0 \
     libpangocairo-1.0-0 \
     libgdk-pixbuf2.0-0 \
     libffi-dev \
-    shared-mime-info \
-    && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    shared-mime-info && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 
