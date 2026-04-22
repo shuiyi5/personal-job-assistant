@@ -111,3 +111,42 @@ class ExportResumeTool(BaseTool):
         from app.services.resume_service import export_resume
         file_path = await export_resume(content, format)
         return {"format": format, "file_path": file_path, "message": f"简历已导出为 {format.upper()} 格式"}
+
+
+class UpdateModuleOrderTool(BaseTool):
+    """调整简历模块顺序"""
+
+    @property
+    def name(self) -> str:
+        return "update_module_order"
+
+    @property
+    def description(self) -> str:
+        return (
+            "调整简历模块的显示顺序。可以将某个模块移到最前面或最后面，或者完全自定义顺序。"
+            "调整后的顺序会保存为用户偏好，影响所有简历的导出格式。"
+        )
+
+    @property
+    def input_schema(self) -> dict:
+        return {
+            "type": "object",
+            "properties": {
+                "module_order": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
+                    },
+                    "description": "新的模块顺序数组，包含所有需要显示的模块 ID"
+                }
+            },
+            "required": ["module_order"]
+        }
+
+    async def execute(self, module_order: list) -> dict:
+        import json
+        from app.api.settings_api import _save_config, _reload_settings
+        _save_config({"module_order": json.dumps(module_order, ensure_ascii=False)})
+        _reload_settings()
+        return {"status": "ok", "module_order": module_order, "message": f"模块顺序已更新: {' → '.join(module_order)}"}

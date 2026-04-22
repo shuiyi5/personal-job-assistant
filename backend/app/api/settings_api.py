@@ -142,12 +142,14 @@ class SettingsResponse(BaseModel):
     llm_provider: str
     llm_model: str
     providers: dict
+    module_order: list[str]
 
 
 class SettingsUpdate(BaseModel):
     llm_provider: Optional[str] = None
     llm_model: Optional[str] = None
     env_vars: Optional[dict[str, str]] = None
+    module_order: Optional[list[str]] = None
 
 
 # ── Endpoints ────────────────────────────────────────
@@ -170,7 +172,18 @@ async def get_current_settings() -> SettingsResponse:
                 fields[f] = raw
         providers[pname] = fields
 
-    return SettingsResponse(llm_provider=provider, llm_model=model, providers=providers)
+    # 读取 module_order，如果不存在则使用默认顺序
+    module_order_str = env.get("module_order", "")
+    if module_order_str:
+        try:
+            import json
+            module_order = json.loads(module_order_str)
+        except:
+            module_order = ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
+    else:
+        module_order = ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
+
+    return SettingsResponse(llm_provider=provider, llm_model=model, providers=providers, module_order=module_order)
 
 
 @router.put("/settings")
@@ -187,6 +200,9 @@ async def update_settings(req: SettingsUpdate) -> dict:
             if "***" in v:
                 continue
             updates[k] = v
+    if req.module_order is not None:
+        import json
+        updates["module_order"] = json.dumps(req.module_order, ensure_ascii=False)
 
     if updates:
         _save_config(updates)

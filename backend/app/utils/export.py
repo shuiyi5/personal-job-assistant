@@ -177,8 +177,102 @@ li { font-size: 10.5pt; margin-bottom: 4px; line-height: 1.6; }
 }
 
 
-def _render_resume_html(data: dict, template_id: str) -> str:
+def _render_summary(data: dict) -> str:
+    """渲染个人简介模块"""
+    if not data.get("summary"):
+        return ""
+    return f'<div class="section"><h2>个人简介</h2><p class="summary">{data["summary"]}</p></div>'
+
+
+def _render_work_experience(data: dict) -> str:
+    """渲染工作经历模块"""
+    if not data.get("work_experience"):
+        return ""
+    entries = ""
+    for exp in data["work_experience"]:
+        hl = "".join(f"<li>{h}</li>" for h in exp.get("highlights", []))
+        entries += f"""<div class="entry">
+            <div class="entry-header"><h3>{exp['title']}</h3><span class="date">{exp.get('start_date','')} - {exp.get('end_date','')}</span></div>
+            <div class="entry-sub">{exp['company']}{(' · ' + exp['location']) if exp.get('location') else ''}</div>
+            <ul>{hl}</ul></div>"""
+    return f'<div class="section"><h2>工作经历</h2>{entries}</div>'
+
+
+def _render_education(data: dict) -> str:
+    """渲染教育背景模块"""
+    if not data.get("education"):
+        return ""
+    entries = ""
+    for edu in data["education"]:
+        hl = "".join(f"<li>{h}</li>" for h in edu.get("highlights", []))
+        gpa_str = f" | GPA: {edu['gpa']}" if edu.get("gpa") else ""
+        entries += f"""<div class="entry">
+            <div class="entry-header"><h3>{edu['degree']} - {edu['field']}</h3><span class="date">{edu.get('start_date','')} - {edu.get('end_date','')}</span></div>
+            <div class="entry-sub">{edu['institution']}{gpa_str}</div>
+            {'<ul>' + hl + '</ul>' if hl else ''}</div>"""
+    return f'<div class="section"><h2>教育背景</h2>{entries}</div>'
+
+
+def _render_skills(data: dict, template_id: str) -> str:
+    """渲染专业技能模块"""
+    if not data.get("skills"):
+        return ""
+    if template_id == "tech":
+        tags = ""
+        for sg in data["skills"]:
+            for item in sg.get("items", []):
+                tags += f'<span class="skill-tag">{item}</span>'
+        return f'<div class="section"><h2>专业技能</h2><div class="skills-grid">{tags}</div></div>'
+    else:
+        items = ""
+        for sg in data["skills"]:
+            items += f'<div class="skill-group"><strong>{sg["category"]}</strong>: {", ".join(sg.get("items", []))}</div>'
+        return f'<div class="section"><h2>专业技能</h2><div class="skills-grid">{items}</div></div>'
+
+
+def _render_projects(data: dict, template_id: str) -> str:
+    """渲染项目经验模块"""
+    if not data.get("projects"):
+        return ""
+    entries = ""
+    for proj in data["projects"]:
+        hl = "".join(f"<li>{h}</li>" for h in proj.get("highlights", []))
+        tech = ""
+        if proj.get("tech_stack"):
+            if template_id == "tech":
+                tech = '<div style="margin-top:4px">' + "".join(f'<span class="skill-tag">{t}</span>' for t in proj["tech_stack"]) + "</div>"
+            else:
+                tech = f'<div class="entry-sub">技术栈: {", ".join(proj["tech_stack"])}</div>'
+        date_str = ""
+        if proj.get("start_date"):
+            date_str = f'{proj["start_date"]} - {proj.get("end_date", "")}'
+        entries += f"""<div class="entry">
+            <div class="entry-header"><h3>{proj['name']}{(' - ' + proj['role']) if proj.get('role') else ''}</h3><span class="date">{date_str}</span></div>
+            <p class="entry-sub">{proj.get('description','')}</p>
+            {tech}<ul>{hl}</ul></div>"""
+    return f'<div class="section"><h2>项目经验</h2>{entries}</div>'
+
+
+def _render_certifications(data: dict) -> str:
+    """渲染证书与奖项模块"""
+    if not data.get("certifications"):
+        return ""
+    items = ""
+    for cert in data["certifications"]:
+        line = cert["name"]
+        if cert.get("issuer"):
+            line += f' ({cert["issuer"]})'
+        if cert.get("date"):
+            line += f' - {cert["date"]}'
+        items += f"<li>{line}</li>"
+    return f'<div class="section"><h2>证书与奖项</h2><ul>{items}</ul></div>'
+
+
+def _render_resume_html(data: dict, template_id: str, module_order: list[str] = None) -> str:
     """将结构化数据渲染为 HTML"""
+    if module_order is None:
+        module_order = ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
+
     personal = data.get("personal", {})
     is_creative = template_id == "creative"
 
@@ -190,81 +284,23 @@ def _render_resume_html(data: dict, template_id: str) -> str:
             contact_parts.append(f'<span>{val}</span>')
     contact_html = " ".join(contact_parts)
 
-    # Sections
+    # 模块渲染函数映射
+    section_renderers = {
+        "summary": lambda: _render_summary(data),
+        "work_experience": lambda: _render_work_experience(data),
+        "education": lambda: _render_education(data),
+        "projects": lambda: _render_projects(data, template_id),
+        "skills": lambda: _render_skills(data, template_id),
+        "certifications": lambda: _render_certifications(data),
+    }
+
+    # 按 module_order 顺序渲染
     sections_html = ""
-
-    # Summary
-    if data.get("summary"):
-        sections_html += f'<div class="section"><h2>个人简介</h2><p class="summary">{data["summary"]}</p></div>'
-
-    # Work Experience
-    if data.get("work_experience"):
-        entries = ""
-        for exp in data["work_experience"]:
-            hl = "".join(f"<li>{h}</li>" for h in exp.get("highlights", []))
-            entries += f"""<div class="entry">
-                <div class="entry-header"><h3>{exp['title']}</h3><span class="date">{exp.get('start_date','')} - {exp.get('end_date','')}</span></div>
-                <div class="entry-sub">{exp['company']}{(' · ' + exp['location']) if exp.get('location') else ''}</div>
-                <ul>{hl}</ul></div>"""
-        sections_html += f'<div class="section"><h2>工作经历</h2>{entries}</div>'
-
-    # Education
-    if data.get("education"):
-        entries = ""
-        for edu in data["education"]:
-            hl = "".join(f"<li>{h}</li>" for h in edu.get("highlights", []))
-            gpa_str = f" | GPA: {edu['gpa']}" if edu.get("gpa") else ""
-            entries += f"""<div class="entry">
-                <div class="entry-header"><h3>{edu['degree']} - {edu['field']}</h3><span class="date">{edu.get('start_date','')} - {edu.get('end_date','')}</span></div>
-                <div class="entry-sub">{edu['institution']}{gpa_str}</div>
-                {'<ul>' + hl + '</ul>' if hl else ''}</div>"""
-        sections_html += f'<div class="section"><h2>教育背景</h2>{entries}</div>'
-
-    # Skills
-    if data.get("skills"):
-        if template_id == "tech":
-            tags = ""
-            for sg in data["skills"]:
-                for item in sg.get("items", []):
-                    tags += f'<span class="skill-tag">{item}</span>'
-            sections_html += f'<div class="section"><h2>专业技能</h2><div class="skills-grid">{tags}</div></div>'
-        else:
-            items = ""
-            for sg in data["skills"]:
-                items += f'<div class="skill-group"><strong>{sg["category"]}</strong>: {", ".join(sg.get("items", []))}</div>'
-            sections_html += f'<div class="section"><h2>专业技能</h2><div class="skills-grid">{items}</div></div>'
-
-    # Projects
-    if data.get("projects"):
-        entries = ""
-        for proj in data["projects"]:
-            hl = "".join(f"<li>{h}</li>" for h in proj.get("highlights", []))
-            tech = ""
-            if proj.get("tech_stack"):
-                if template_id == "tech":
-                    tech = '<div style="margin-top:4px">' + "".join(f'<span class="skill-tag">{t}</span>' for t in proj["tech_stack"]) + "</div>"
-                else:
-                    tech = f'<div class="entry-sub">技术栈: {", ".join(proj["tech_stack"])}</div>'
-            date_str = ""
-            if proj.get("start_date"):
-                date_str = f'{proj["start_date"]} - {proj.get("end_date", "")}'
-            entries += f"""<div class="entry">
-                <div class="entry-header"><h3>{proj['name']}{(' - ' + proj['role']) if proj.get('role') else ''}</h3><span class="date">{date_str}</span></div>
-                <p class="entry-sub">{proj.get('description','')}</p>
-                {tech}<ul>{hl}</ul></div>"""
-        sections_html += f'<div class="section"><h2>项目经验</h2>{entries}</div>'
-
-    # Certifications
-    if data.get("certifications"):
-        items = ""
-        for cert in data["certifications"]:
-            line = cert["name"]
-            if cert.get("issuer"):
-                line += f' ({cert["issuer"]})'
-            if cert.get("date"):
-                line += f' - {cert["date"]}'
-            items += f"<li>{line}</li>"
-        sections_html += f'<div class="section"><h2>证书与奖项</h2><ul>{items}</ul></div>'
+    for module_id in module_order:
+        if module_id == "personal":
+            continue  # personal 在 header 中处理
+        if module_id in section_renderers:
+            sections_html += section_renderers[module_id]()
 
     # Custom Sections
     for sec in data.get("custom_sections", []):
@@ -381,15 +417,25 @@ def markdown_to_docx(content: str) -> str:
 
 # ── 结构化数据导出 ──────────────────────────────────────
 
-def structured_to_pdf(data: dict, template_id: str = "professional") -> str:
+def structured_to_pdf(data: dict, template_id: str = "professional", module_order: list[str] = None) -> str:
     """结构化简历数据 + 模板 → PDF (需要 weasyprint)"""
     try:
         from weasyprint import HTML
     except ImportError:
         raise RuntimeError("PDF 导出需要安装 weasyprint 及其系统依赖")
 
+    if module_order is None:
+        from app.api.settings_api import _read_config
+        import json
+        cfg = _read_config()
+        raw = cfg.get("module_order", "")
+        try:
+            module_order = json.loads(raw) if raw else None
+        except Exception:
+            module_order = None
+
     css = TEMPLATE_CSS.get(template_id, TEMPLATE_CSS["professional"])
-    body_html = _render_resume_html(data, template_id)
+    body_html = _render_resume_html(data, template_id, module_order)
 
     full_html = f"""<!DOCTYPE html>
 <html><head><meta charset="utf-8"><style>{css}</style></head>
@@ -403,11 +449,24 @@ def structured_to_pdf(data: dict, template_id: str = "professional") -> str:
     return output_path
 
 
-def structured_to_docx(data: dict, template_id: str = "professional") -> str:
+def structured_to_docx(data: dict, template_id: str = "professional", module_order: list[str] = None) -> str:
     """结构化简历数据 → DOCX"""
     from docx import Document
     from docx.shared import Pt, RGBColor
     from docx.enum.text import WD_ALIGN_PARAGRAPH
+
+    if module_order is None:
+        from app.api.settings_api import _read_config
+        import json
+        cfg = _read_config()
+        raw = cfg.get("module_order", "")
+        try:
+            module_order = json.loads(raw) if raw else None
+        except Exception:
+            module_order = None
+
+    if module_order is None:
+        module_order = ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
 
     doc = Document()
     style = doc.styles["Normal"]
@@ -432,69 +491,86 @@ def structured_to_docx(data: dict, template_id: str = "professional") -> str:
             run.font.size = Pt(9)
             run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    # Summary
-    if data.get("summary"):
-        doc.add_heading("个人简介", level=2)
-        doc.add_paragraph(data["summary"])
+    # 模块渲染函数映射
+    def render_summary():
+        if data.get("summary"):
+            doc.add_heading("个人简介", level=2)
+            doc.add_paragraph(data["summary"])
 
-    # Work Experience
-    if data.get("work_experience"):
-        doc.add_heading("工作经历", level=2)
-        for exp in data["work_experience"]:
-            p = doc.add_paragraph()
-            run = p.add_run(f"{exp['title']}  ")
-            run.bold = True
-            run.font.size = Pt(11)
-            p.add_run(f"@ {exp['company']}").font.size = Pt(10)
-            p = doc.add_paragraph(f"{exp.get('start_date', '')} - {exp.get('end_date', '')}")
-            p.runs[0].font.size = Pt(9)
-            p.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
-            for h in exp.get("highlights", []):
-                doc.add_paragraph(h, style="List Bullet")
+    def render_work_experience():
+        if data.get("work_experience"):
+            doc.add_heading("工作经历", level=2)
+            for exp in data["work_experience"]:
+                p = doc.add_paragraph()
+                run = p.add_run(f"{exp['title']}  ")
+                run.bold = True
+                run.font.size = Pt(11)
+                p.add_run(f"@ {exp['company']}").font.size = Pt(10)
+                p = doc.add_paragraph(f"{exp.get('start_date', '')} - {exp.get('end_date', '')}")
+                p.runs[0].font.size = Pt(9)
+                p.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+                for h in exp.get("highlights", []):
+                    doc.add_paragraph(h, style="List Bullet")
 
-    # Education
-    if data.get("education"):
-        doc.add_heading("教育背景", level=2)
-        for edu in data["education"]:
-            p = doc.add_paragraph()
-            run = p.add_run(f"{edu['degree']} - {edu['field']}  ")
-            run.bold = True
-            p.add_run(f"@ {edu['institution']}")
-            p = doc.add_paragraph(f"{edu.get('start_date', '')} - {edu.get('end_date', '')}")
-            p.runs[0].font.size = Pt(9)
-            p.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+    def render_education():
+        if data.get("education"):
+            doc.add_heading("教育背景", level=2)
+            for edu in data["education"]:
+                p = doc.add_paragraph()
+                run = p.add_run(f"{edu['degree']} - {edu['field']}  ")
+                run.bold = True
+                p.add_run(f"@ {edu['institution']}")
+                p = doc.add_paragraph(f"{edu.get('start_date', '')} - {edu.get('end_date', '')}")
+                p.runs[0].font.size = Pt(9)
+                p.runs[0].font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    # Skills
-    if data.get("skills"):
-        doc.add_heading("专业技能", level=2)
-        for sg in data["skills"]:
-            p = doc.add_paragraph()
-            run = p.add_run(f"{sg['category']}: ")
-            run.bold = True
-            p.add_run(", ".join(sg.get("items", [])))
+    def render_skills():
+        if data.get("skills"):
+            doc.add_heading("专业技能", level=2)
+            for sg in data["skills"]:
+                p = doc.add_paragraph()
+                run = p.add_run(f"{sg['category']}: ")
+                run.bold = True
+                p.add_run(", ".join(sg.get("items", [])))
 
-    # Projects
-    if data.get("projects"):
-        doc.add_heading("项目经验", level=2)
-        for proj in data["projects"]:
-            p = doc.add_paragraph()
-            run = p.add_run(proj["name"])
-            run.bold = True
-            if proj.get("description"):
-                doc.add_paragraph(proj["description"])
-            for h in proj.get("highlights", []):
-                doc.add_paragraph(h, style="List Bullet")
+    def render_projects():
+        if data.get("projects"):
+            doc.add_heading("项目经验", level=2)
+            for proj in data["projects"]:
+                p = doc.add_paragraph()
+                run = p.add_run(proj["name"])
+                run.bold = True
+                if proj.get("description"):
+                    doc.add_paragraph(proj["description"])
+                for h in proj.get("highlights", []):
+                    doc.add_paragraph(h, style="List Bullet")
 
-    # Certifications
-    if data.get("certifications"):
-        doc.add_heading("证书与奖项", level=2)
-        for cert in data["certifications"]:
-            line = cert["name"]
-            if cert.get("issuer"):
-                line += f" ({cert['issuer']})"
-            if cert.get("date"):
-                line += f" - {cert['date']}"
-            doc.add_paragraph(line, style="List Bullet")
+    def render_certifications():
+        if data.get("certifications"):
+            doc.add_heading("证书与奖项", level=2)
+            for cert in data["certifications"]:
+                line = cert["name"]
+                if cert.get("issuer"):
+                    line += f" ({cert['issuer']})"
+                if cert.get("date"):
+                    line += f" - {cert['date']}"
+                doc.add_paragraph(line, style="List Bullet")
+
+    # 按 module_order 顺序渲染
+    section_renderers = {
+        "summary": render_summary,
+        "work_experience": render_work_experience,
+        "education": render_education,
+        "projects": render_projects,
+        "skills": render_skills,
+        "certifications": render_certifications,
+    }
+
+    for module_id in module_order:
+        if module_id == "personal":
+            continue  # personal 已在上面处理
+        if module_id in section_renderers:
+            section_renderers[module_id]()
 
     filename = f"resume_{uuid.uuid4().hex[:8]}.docx"
     output_path = os.path.join(settings.upload_dir, filename)

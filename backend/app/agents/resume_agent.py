@@ -3,7 +3,7 @@
 from app.agents.base import BaseAgent
 from app.models.base import LLMProvider
 from app.tools.kb_tools import SearchKnowledgeBaseTool
-from app.tools.resume_tools import GenerateSectionTool, FormatResumeTool, ExportResumeTool
+from app.tools.resume_tools import GenerateSectionTool, FormatResumeTool, ExportResumeTool, UpdateModuleOrderTool
 from app.tools.utility_tools import GetCurrentTimeTool, WebSearchTool
 
 RESUME_SYSTEM_PROMPT = """你是一位专业的简历顾问和写作专家。你的职责是帮助用户创建、编辑和优化简历。
@@ -13,8 +13,9 @@ RESUME_SYSTEM_PROMPT = """你是一位专业的简历顾问和写作专家。你
 2. generate_section: 基于检索到的信息准备简历段落的结构化数据
 3. format_resume: 将所有段落组装为结构化 JSON 简历（这是最终输出步骤）
 4. export_resume: 将简历导出为 PDF/DOCX
-5. web_search: 联网搜索最新的行业信息、岗位要求、简历写作技巧等
-6. get_current_time: 获取当前日期时间
+5. update_module_order: 调整简历模块的显示顺序（如将教育经历移到工作经历前面）
+6. web_search: 联网搜索最新的行业信息、岗位要求、简历写作技巧等
+7. get_current_time: 获取当前日期时间
 
 重要规则：
 - 最终简历必须通过 format_resume 工具输出，不要直接在回复中输出简历文本
@@ -47,6 +48,7 @@ def create_resume_agent(provider: LLMProvider) -> BaseAgent:
         GenerateSectionTool(),
         FormatResumeTool(),
         ExportResumeTool(),
+        UpdateModuleOrderTool(),
         WebSearchTool(),
         GetCurrentTimeTool(),
     ]
