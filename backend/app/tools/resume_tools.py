@@ -6,6 +6,37 @@ from app.schemas.resume import ResumeData
 from app.tools.base import BaseTool
 
 
+def _flatten_schema(schema: dict) -> dict:
+    """将包含 $defs/$ref/anyOf 的 JSON Schema 展开为 Claude API 兼容格式"""
+    import copy
+    schema = copy.deepcopy(schema)
+
+    defs = schema.pop("$defs", {})
+
+    def resolve(obj):
+        if isinstance(obj, dict):
+            # 解析 $ref
+            if "$ref" in obj:
+                ref_name = obj["$ref"].split("/")[-1]
+                return resolve(copy.deepcopy(defs.get(ref_name, obj)))
+            # 将 anyOf: [type, null] 简化为单一类型 (可选字段)
+            if "anyOf" in obj:
+                non_null = [t for t in obj["anyOf"] if t != {"type": "null"}]
+                if len(non_null) == 1:
+                    result = resolve(non_null[0])
+                    # 保留其他字段 (title, default, description)
+                    for k, v in obj.items():
+                        if k != "anyOf" and k not in result:
+                            result[k] = v
+                    return result
+            return {k: resolve(v) for k, v in obj.items()}
+        elif isinstance(obj, list):
+            return [resolve(item) for item in obj]
+        return obj
+
+    return resolve(schema)
+
+
 class GenerateSectionTool(BaseTool):
     """基于知识库上下文生成简历段落"""
 
@@ -78,7 +109,7 @@ class FormatResumeTool(BaseTool):
 
     @property
     def input_schema(self) -> dict:
-        return ResumeData.model_json_schema()
+        return _flatten_schema(ResumeData.model_json_schema())
 
     async def execute(self, **kwargs) -> str:
         data = ResumeData(**kwargs)
