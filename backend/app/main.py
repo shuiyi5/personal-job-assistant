@@ -13,14 +13,11 @@ from app.config.settings import settings
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
     os.makedirs(settings.upload_dir, exist_ok=True)
+    os.makedirs(settings.chroma_db_path, exist_ok=True)
 
-    # 初始化数据库表结构
-    try:
-        from app.rag.store import get_chroma_collection
-        get_chroma_collection()
-        print("PostgreSQL + pgvector 已初始化")
-    except Exception as e:
-        print(f"数据库初始化失败 (DATABASE_URL 未设置?): {e}")
+    from app.rag.store import get_chroma_collection
+    get_chroma_collection()
+    print(f"ChromaDB 已初始化: {settings.chroma_db_path}")
 
     yield
 

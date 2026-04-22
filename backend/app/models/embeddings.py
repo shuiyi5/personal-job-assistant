@@ -6,19 +6,18 @@ from app.models.base import EmbeddingProvider
 
 
 class ChromaDefaultEmbedding(EmbeddingProvider):
-    """使用 sentence-transformers all-MiniLM-L6-v2 模型 (384 维)"""
+    """使用 ChromaDB 内置的 all-MiniLM-L6-v2 模型"""
 
     def __init__(self):
-        from sentence_transformers import SentenceTransformer
-        self._model = SentenceTransformer("all-MiniLM-L6-v2")
+        from chromadb.utils.embedding_functions import DefaultEmbeddingFunction
+        self._ef = DefaultEmbeddingFunction()
 
     async def embed(self, text: str) -> list[float]:
-        result = await asyncio.to_thread(self._model.encode, [text])
-        return result[0].tolist()
+        result = await asyncio.to_thread(self._ef, [text])
+        return result[0]
 
     async def embed_batch(self, texts: list[str]) -> list[list[float]]:
-        result = await asyncio.to_thread(self._model.encode, texts)
-        return result.tolist()
+        return await asyncio.to_thread(self._ef, texts)
 
 
 class OpenAIEmbedding(EmbeddingProvider):

@@ -1,4 +1,4 @@
-# Web framework (updated 2026-04-22)
+# Web framework
 fastapi>=0.110
 uvicorn[standard]>=0.27
 python-multipart>=0.0.6
@@ -7,12 +7,8 @@ python-multipart>=0.0.6
 anthropic>=0.40
 openai>=1.12
 
-# PostgreSQL + pgvector (替换 ChromaDB)
-psycopg2-binary>=2.9
-pgvector>=0.3
-
-# Embedding
-sentence-transformers>=3.0
+# RAG / Vector DB
+chromadb>=0.4
 
 # Document parsing
 PyPDF2>=3.0
