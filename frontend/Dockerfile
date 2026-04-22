@@ -18,7 +18,9 @@ COPY --from=builder /app/dist /usr/share/nginx/html
 # 复制 nginx 配置模板
 COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
-ENV BACKEND_URL=backend-production-4987.up.railway.app
+# Railway 会通过环境变量注入 BACKEND_URL
+# 默认值仅用于本地测试
+ENV BACKEND_URL=localhost:8000
 
 EXPOSE 3000
 
