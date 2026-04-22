@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Download, Wand2, Loader2 } from 'lucide-react'
+import { Download, Wand2, Loader2, Printer } from 'lucide-react'
 import { useResumeStore } from '../stores/resumeStore'
 import { useChatStore } from '../stores/chatStore'
 import TemplateSelector from '../components/Resume/TemplateSelector'
@@ -13,13 +13,37 @@ export default function ResumePage() {
   useEffect(() => { setPageContext('resume') }, [setPageContext])
   const [jobTitle, setJobTitle] = useState('')
 
+  const handlePrintPDF = () => {
+    if (!resumeData) return
+
+    // 触发浏览器打印对话框
+    // 用户可以选择"另存为 PDF"
+    window.print()
+  }
+
   return (
     <div className="flex flex-col h-full">
+      <style>{`
+        @media print {
+          [data-print-hide] { display: none !important; }
+          [data-print-preview] {
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            overflow: visible !important;
+            z-index: 9999 !important;
+          }
+          @page { margin: 0; size: A4 portrait; }
+          body { margin: 0; }
+        }
+      `}</style>
       {/* 模板选择器 (可收起) */}
-      <TemplateSelector />
+      <div data-print-hide><TemplateSelector /></div>
 
       {/* 顶部控制栏 */}
-      <div className="border-b bg-white px-4 py-2 flex flex-wrap gap-3 items-center">
+      <div data-print-hide className="border-b bg-white px-4 py-2 flex flex-wrap gap-3 items-center">
         <input
           type="text"
           value={jobTitle}
@@ -36,7 +60,15 @@ export default function ResumePage() {
           AI 生成简历
         </button>
         <div className="flex gap-1 ml-auto">
-          {(['pdf', 'docx', 'markdown'] as const).map(fmt => (
+          <button
+            onClick={handlePrintPDF}
+            disabled={!resumeData}
+            className="border px-3 py-1.5 rounded-lg text-sm hover:bg-gray-50 disabled:opacity-30 flex items-center gap-1"
+          >
+            <Printer size={13} />
+            PDF
+          </button>
+          {(['docx', 'markdown'] as const).map(fmt => (
             <button
               key={fmt}
               onClick={() => exportResume(fmt)}
@@ -53,7 +85,7 @@ export default function ResumePage() {
       {/* 编辑器 + 预览 */}
       <div className="flex-1 flex overflow-hidden">
         {/* 左侧: 结构化表单编辑器 + 思考面板 */}
-        <div className="w-[380px] flex-shrink-0 border-r flex flex-col bg-gray-50/50">
+        <div data-print-hide className="w-[380px] flex-shrink-0 border-r flex flex-col bg-gray-50/50">
           <div className="flex-1 overflow-hidden">
             <ResumeEditor />
           </div>
@@ -61,7 +93,7 @@ export default function ResumePage() {
         </div>
 
         {/* 右侧: 模板 HTML 实时预览 */}
-        <div className="flex-1 overflow-hidden">
+        <div data-print-preview className="flex-1 overflow-hidden">
           <ResumePreview />
         </div>
       </div>
