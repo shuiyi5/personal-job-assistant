@@ -1,8 +1,7 @@
 [railway]
 language = "python"
-
-[build]
-builder = "NIXPACKS"
+# Railway 使用 Nixpacks 自动构建
+# rootDirectory 已在 Railway 后台设置为 backend/
 
 [deploy]
 region = "us-west1"
@@ -18,4 +17,3 @@ persistentDirectories = ["/app/data"]
 [env]
 PYTHONUNBUFFERED = "1"
 PORT = "8000"
-RAILWAY_NIXPACKS_JSON = '{"instructions": "COPY . .\\nRUN pip install --no-cache-dir -r requirements.txt\\nCMD uvicorn app.main:app --host 0.0.0.0 --port $PORT"}'
