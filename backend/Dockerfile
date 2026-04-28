@@ -10,17 +10,15 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# 仓库根目录上下文，requirements.txt 在 backend/ 子目录
-COPY backend/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY backend/ .
+COPY . .
 
 # 创建数据目录
 RUN mkdir -p data/chroma_db data/uploads
 
-ENV PORT=8000
+ENV PORT=8080
 EXPOSE ${PORT}
 
-# Railway 通过 $PORT 环境变量指定端口
 CMD uvicorn app.main:app --host 0.0.0.0 --port ${PORT}
