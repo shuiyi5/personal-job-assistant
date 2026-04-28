@@ -1,10 +1,8 @@
 [railway]
 language = "python"
-buildCommand = "cd backend && pip install -r requirements.txt"
-startCommand = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
 
 [build]
-dockerfilePath = "backend/Dockerfile"
+builder = "NIXPACKS"
 
 [deploy]
 region = "us-west1"
@@ -15,9 +13,9 @@ path = "/"
 interval = 30
 
 [settings]
-# 持久化目录
 persistentDirectories = ["/app/data"]
 
 [env]
 PYTHONUNBUFFERED = "1"
 PORT = "8000"
+RAILWAY_NIXPACKS_JSON = '{"instructions": "COPY . .\\nRUN pip install --no-cache-dir -r requirements.txt\\nCMD uvicorn app.main:app --host 0.0.0.0 --port $PORT"}'
