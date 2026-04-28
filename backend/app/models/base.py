@@ -2,7 +2,7 @@
 
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, AsyncGenerator
+from typing import Any, AsyncGenerator, AsyncIterator, Optional, Union
 
 
 class LLMProvider(ABC):
@@ -35,10 +35,15 @@ class LLMProvider(ABC):
         messages: list[dict],
         tools: list[dict],
         system: str = "",
+        stream: bool = False,
         **kwargs,
-    ) -> dict:
-        """带工具调用的聊天，返回结构化响应
-        返回: {"text": str, "tool_calls": [{"name": str, "input": dict, "id": str}]}
+    ) -> Union[dict, AsyncIterator[dict]]:
+        """带工具调用的聊天。
+
+        stream=False: 返回完整 dict {"text": str, "tool_calls": [...], ...}
+        stream=True: 返回 AsyncIterator，逐步 yield:
+          - {"type": "text", "content": str}
+          - {"type": "done", "text": str, "tool_calls": [...], ...}
         """
 
     async def _retry(self, fn, *args, **kwargs) -> Any:
@@ -66,7 +71,7 @@ class EmbeddingProvider(ABC):
         """批量文本嵌入"""
 
 
-def get_llm_provider(provider_name: str | None = None) -> LLMProvider:
+def get_llm_provider(provider_name: Optional[str] = None) -> LLMProvider:
     """工厂函数: 根据名称返回 LLM 提供商实例
 
     支持的提供商:
@@ -131,26 +136,19 @@ def get_llm_provider(provider_name: str | None = None) -> LLMProvider:
     elif name == "custom":
         if not settings.custom_base_url or not settings.custom_api_key:
             raise ValueError("自定义提供商需要设置 CUSTOM_BASE_URL 和 CUSTOM_API_KEY")
-        if settings.custom_api_format == "claude":
-            from app.models.claude_compatible_provider import ClaudeCompatibleProvider
-            return ClaudeCompatibleProvider(
-                api_key=settings.custom_api_key,
-                base_url=settings.custom_base_url,
-                model=settings.custom_model or "custom-model",
-            )
-        else:
-            return OpenAICompatibleProvider(
-                api_key=settings.custom_api_key,
-                base_url=settings.custom_base_url,
-                model=settings.custom_model or "custom-model",
-            )
+        # 统一使用 OpenAICompatibleProvider，支持真正的流式输出
+        return OpenAICompatibleProvider(
+            api_key=settings.custom_api_key,
+            base_url=settings.custom_base_url,
+            model=settings.custom_model or "custom-model",
+        )
 
     else:
         supported = "claude, openai, ollama, deepseek, zhipu, moonshot, dashscope, yi, siliconflow, custom"
         raise ValueError(f"不支持的 LLM 提供商: {name} (支持: {supported})")
 
 
-def get_embedding_provider(provider_name: str | None = None) -> EmbeddingProvider:
+def get_embedding_provider(provider_name: Optional[str] = None) -> EmbeddingProvider:
     """工厂函数: 根据名称返回 Embedding 提供商实例"""
     from app.config.settings import settings
 

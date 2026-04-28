@@ -1,0 +1,485 @@
+{
+  "companies": [
+    {
+      "id": "20260427195447_d3bf0d5e",
+      "name": "字节跳动",
+      "city": "北京",
+      "industry": "互联网",
+      "description": null,
+      "website": null
+    },
+    {
+      "id": "20260427203556_4b5e466b",
+      "name": "美团",
+      "city": "北京",
+      "industry": "本地生活",
+      "description": null,
+      "website": null
+    }
+  ],
+  "positions": [
+    {
+      "id": "20260427195447_c28d93ef",
+      "company_id": "20260427195447_d3bf0d5e",
+      "name": "AI产品实习生-TRAE"
+    },
+    {
+      "id": "20260427203556_22635568",
+      "company_id": "20260427203556_4b5e466b",
+      "name": "后端工程师"
+    }
+  ],
+  "jobs": [
+    {
+      "id": "20260427195447_ac9761b3",
+      "position_id": "20260427195447_c28d93ef",
+      "raw_text": "职位描述\nByteIntern：面向2027届毕业生（2026年9月-2027年8月期间毕业），为符合岗位要求的同学提供转正机会。\n团队介绍：TRAE（The Real AI Engineer），是字节跳动旗下的AI编程产品，一个能理解需求、调动工具、独立完成开发任务的AI开发工程师，为用户提供端到端生成真实软件的服务。TRAE是当前国内受到广泛欢迎的AI编程产品之一，也是业界首个端到端AI软件开发Agent产品，可覆盖简单到复杂全场景。我们正在寻找充满热情、富有创造力的人才。期待你的加入，与我们共同重塑开发范式，定义未来开发的形态。\n\n1、建设AI编程产品TRAE，包括用户调研、行业分析、产品设计、用户体验设计、用户运营等；\n2、与产品运营和市场团队保持紧密协作，与开发者社区、用户社区保持紧密沟通，充分传递产品价值，理解客户需求，并落实有效需求到产品中，持续跟进产品的关键数据指标和用户反馈，持续迭代优化产品；\n3、与研发、算法、测试团队保持紧密合作，提升端到端AI效果，推动产品发布和项目落地；\n4、与UI/UX团队保持紧密合作，持续提升产品的视觉交互体验，设计新一代的交互方式。\n职位要求\n1、2027届本科及以上学历在读，计算机、软件工程等相关专业优先；\n2、了解基础的AI技术，例如NLP、机器学习、LLM的大致原理；\n3、具备良好的英语读写能力，能够阅读和理解产品、技术文档和学术论文；\n4、具备良好的主人翁和逻辑思维，有创新意识和意愿，有良好的分析能力，愿意独立思考；\n5、有责任感，有跨团队协作能力，以用户价值为先，做热爱用户的产品经理，做用户喜爱的产品；\n6、至少实习4个月，每周出勤4天以及以上。",
+      "salary_range": null,
+      "location": null,
+      "skills": [],
+      "requirements": [],
+      "plus_points": [],
+      "parsed_at": null
+    },
+    {
+      "id": "20260427203556_3f46aece",
+      "position_id": "20260427203556_22635568",
+      "raw_text": "美团后端工程师职位，负责平台研发。要求：本科以上，3年经验，精通Java/Go，熟悉微服务。加分项：有高并发经验。",
+      "salary_range": "40k-60k",
+      "location": "北京",
+      "skills": [
+        "Java",
+        "Go",
+        "微服务"
+      ],
+      "requirements": [
+        "3年以上经验",
+        "精通Java或Go"
+      ],
+      "plus_points": [],
+      "parsed_at": null
+    }
+  ],
+  "resumes": [
+    {
+      "id": "20260427203643_7abda4ac",
+      "jd_id": "20260427203556_3f46aece",
+      "resume_data": {
+        "personal": {
+          "name": "张三",
+          "phone": "13800138000",
+          "email": "zhangsan@example.com",
+          "location": null,
+          "website": null,
+          "linkedin": null,
+          "github": null,
+          "avatar_url": null,
+          "title": "后端工程师"
+        },
+        "summary": "5年后端开发经验",
+        "work_experience": [
+          {
+            "company": "字节跳动",
+            "title": "后端工程师",
+            "location": null,
+            "start_date": "2021",
+            "end_date": "至今",
+            "highlights": [
+              "支撑日均亿级请求"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "institution": "清华大学",
+            "degree": "本科",
+            "field": "计算机科学",
+            "start_date": "2015",
+            "end_date": "2019",
+            "gpa": null,
+            "highlights": []
+          }
+        ],
+        "skills": [
+          {
+            "category": "后端",
+            "items": [
+              "Java",
+              "Go",
+              "Python"
+            ]
+          }
+        ],
+        "projects": [],
+        "certifications": [],
+        "custom_sections": [],
+        "module_order": []
+      },
+      "created_at": "2026-04-27T20:36:43.227135",
+      "updated_at": "2026-04-27T20:36:43.227137"
+    },
+    {
+      "id": "20260428150937_d00c27c3",
+      "jd_id": "20260427203556_3f46aece",
+      "resume_data": {
+        "personal": {
+          "name": "测试",
+          "phone": null,
+          "email": "test@test.com",
+          "location": null,
+          "website": null,
+          "linkedin": null,
+          "github": null,
+          "avatar_url": null,
+          "title": null
+        },
+        "summary": "",
+        "work_experience": [
+          {
+            "company": "公司A",
+            "title": "工程师",
+            "location": null,
+            "start_date": "2020",
+            "end_date": "至今",
+            "highlights": []
+          }
+        ],
+        "education": [
+          {
+            "institution": "大学",
+            "degree": "本科",
+            "field": "计算机",
+            "start_date": "2016",
+            "end_date": "2020",
+            "gpa": null,
+            "highlights": []
+          }
+        ],
+        "skills": [
+          {
+            "category": "后端",
+            "items": [
+              "Python"
+            ]
+          }
+        ],
+        "projects": [],
+        "certifications": [],
+        "custom_sections": [],
+        "module_order": []
+      },
+      "created_at": "2026-04-28T15:09:37.143447",
+      "updated_at": "2026-04-28T15:09:37.143480"
+    },
+    {
+      "id": "20260428153346_bc2116fd",
+      "jd_id": "20260427195447_ac9761b3",
+      "resume_data": {
+        "personal": {
+          "name": "税羿",
+          "phone": "13859126932",
+          "email": "13859126932@163.com",
+          "location": "上海",
+          "website": null,
+          "linkedin": null,
+          "github": null,
+          "avatar_url": null,
+          "title": "AI产品经理"
+        },
+        "summary": "有两年 AI 产品相关行业经验的 AI 产品经理，核心优势聚焦 AI 技术落地与产品全流程实践。Prompt Engineering 专家，累积编写近百个适配 GPT-4/Claude/文心一言等头部模型的 Prompt。具备 AI 原生开发能力，熟练使用 Cursor、Vibe Coding 等 AI 辅助编程工具。Agent 系统设计与落地专家，主导车机端情绪仓智能体 MVP 版本交付（响应时间缩短 68%）。数据驱动的产品思维，擅长用 SWOT/PEST 框架做竞品分析、构建用户画像、A/B测试设计。自驱力强，持续追踪 AI 前沿资讯，主动迭代技术与产品方法论，始终以\"技术落地 + 用户体验\"为核心。",
+        "work_experience": [
+          {
+            "company": "上海哔哩哔哩科技有限公司",
+            "title": "AI产品实习生",
+            "location": "上海",
+            "start_date": "2026-01",
+            "end_date": "2026-04",
+            "highlights": [
+              "主导TTS纠错链路的设计与持续优化，建立多音字词表、生僻字词表等语音资产库，协同语音团队完成模型训练，推动TTS准确率由75%显著提升至95%（提升20个百分点）",
+              "负责语音Agent的Demo设计与开发，使用 Claudecode快速完成原型验证，成功将花生AI项目中的GUI能力迁移为LUI能力，实现与主Agent功能的高效整合",
+              "参与花生Agent本地检索模块的设计与Demo搭建，基于RAG-VLM链路实现用户文案与素材的精准匹配，设计分级检索策略（向量检索+视觉匹配+个性化排序），匹配效率提升约45%",
+              "设计并实施 A/B 测试验证优化效果，通过埋点数据分析用户行为，迭代优化产品体验"
+            ]
+          },
+          {
+            "company": "木卫四（北京）科技有限公司",
+            "title": "AI产品实习生",
+            "location": "北京",
+            "start_date": "2025-06",
+            "end_date": "2025-10",
+            "highlights": [
+              "核心负责星途车机端情绪仓智能体 MVP 研发，主导需求拆解与 PRD 输出（20+ 页详细文档），牵头跨技术/设计/测试 3 个部门完成方案对齐，推动项目按时交付",
+              "优化 RAG 检索机制与 Prompt 工程，搭建用户体验导向的专属语料库（覆盖20+情绪场景），设计车机端适配原型，将智能体判断精准度提升 40%+（从60%提升至84%），响应时间缩短 68%（从5秒降至1.6秒）",
+              "设计并实施模型评估体系（准确率/召回率/F1/用户满意度），通过 A/B 测试验证优化效果，用户投诉率下降 50%+",
+              "成功交付符合车规级标准的 MVP 版本，支撑 10 万+ 潜在用户场景覆盖，明确 3 大迭代方向（多模态交互/场景化语料扩充/跨应用联动）"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "institution": "安徽大学",
+            "degree": "本科",
+            "field": "计算机科学与技术",
+            "start_date": "2023-09",
+            "end_date": "2027-06",
+            "gpa": "前20%",
+            "highlights": [
+              "211院校",
+              "主修课程：数据库、计算机组成原理、数据结构"
+            ]
+          }
+        ],
+        "skills": [
+          {
+            "category": "AI 产品核心能力",
+            "items": [
+              "Prompt Engineering：Few-shot、Chain-of-Thought、ReAct、Self-Consistency、Tree-of-Thoughts 等高级技巧",
+              "Agent 架构：ReAct、ReWOO、AutoGPT、LangChain、LangGraph 等框架实践",
+              "RAG 系统：向量数据库（ChromaDB/Pinecone/Milvus）、Embedding 模型选型、检索策略优化、Rerank",
+              "模型评估：LLM Evals、A/B测试设计、指标体系搭建（准确率/召回率/F1/用户满意度）",
+              "大模型应用：GPT-4/Claude/文心一言/通义千问/豆包/Kimi/DeepSeek 等主流模型的能力边界与应用场景"
+            ]
+          },
+          {
+            "category": "AI 原生开发工具",
+            "items": [
+              "AI Coding：Cursor、Windsurf、Vibe Coding、GitHub Copilot、Trae",
+              "本地部署：RAGFLOW、OLLAMA、Docker、LM Studio",
+              "开发框架：LangChain、LlamaIndex、Semantic Kernel、Haystack"
+            ]
+          },
+          {
+            "category": "原型/设计工具",
+            "items": [
+              "原型设计：Figma、墨刀、Axure",
+              "AIGC 工具：Stable Diffusion、ComfyUI、Midjourney",
+              "视频生成：Sora、即梦AI、Runway、Pika"
+            ]
+          },
+          {
+            "category": "数据分析与编程",
+            "items": [
+              "Python（熟练）、SQL（熟练）、JavaScript（基础）",
+              "数据分析：Pandas、NumPy、Matplotlib、Seaborn",
+              "数据库：MySQL、PostgreSQL、ChromaDB、Pinecone"
+            ]
+          },
+          {
+            "category": "办公/协作工具",
+            "items": [
+              "项目管理：飞书、Notion、Jira、Trello",
+              "文档协作：飞书文档、Notion、Confluence",
+              "数据分析：Excel（VLOOKUP/数据透视表/宏）、飞书多维表格"
+            ]
+          }
+        ],
+        "projects": [],
+        "certifications": [],
+        "custom_sections": [],
+        "module_order": []
+      },
+      "created_at": "2026-04-28T15:33:46.140056",
+      "updated_at": "2026-04-28T15:33:46.140060"
+    },
+    {
+      "id": "20260428155317_d3137d0c",
+      "jd_id": "20260427195447_ac9761b3",
+      "resume_data": {
+        "personal": {
+          "name": "税羿",
+          "phone": "13859126932",
+          "email": "13859126932@163.com",
+          "location": "上海",
+          "website": null,
+          "linkedin": null,
+          "github": null,
+          "avatar_url": null,
+          "title": "AI产品经理实习生"
+        },
+        "summary": "有两年AI产品相关行业经验，核心优势聚焦AI技术落地与产品全流程实践。熟练掌握Prompt Engineering（GPT-4/Claude/文心一言等主流模型）、Agent架构设计与RAG系统优化，具备从需求调研、PRD输出、原型设计到跨团队协作的完整闭环经验。熟练使用Cursor、Windsurf、Vibe Coding、Trae等AI辅助编程工具，具备快速原型验证能力。数据驱动思维强，擅长A/B测试设计与指标体系搭建，持续追踪AI前沿资讯（每周10+篇论文/技术博客），始终以\"技术落地+用户体验\"为核心做产品。",
+        "work_experience": [
+          {
+            "company": "上海哔哩哔哩科技有限公司",
+            "title": "AI产品实习生",
+            "location": "上海",
+            "start_date": "2026-01",
+            "end_date": "2026-04",
+            "highlights": [
+              "主导TTS纠错链路的设计与持续优化，建立多音字词表、生僻字词表等语音资产库，协同语音团队完成模型训练，推动TTS准确率由75%显著提升至95%（提升20个百分点）",
+              "负责语音Agent的Demo设计与开发，使用ClaudeCode快速完成原型验证，成功将花生AI项目中的GUI能力迁移为LUI能力，实现与主Agent功能的高效整合",
+              "参与花生Agent本地检索模块的设计与Demo搭建，基于RAG-VLM链路实现用户文案与素材的精准匹配，设计分级检索策略（向量检索+视觉匹配+个性化排序），匹配效率提升约45%",
+              "设计并实施A/B测试验证优化效果，通过埋点数据分析用户行为，迭代优化产品体验"
+            ]
+          },
+          {
+            "company": "木卫四（北京）科技有限公司",
+            "title": "AI产品实习生",
+            "location": "北京",
+            "start_date": "2025-06",
+            "end_date": "2025-10",
+            "highlights": [
+              "核心负责星途车机端情绪仓智能体MVP研发，主导需求拆解与PRD输出（20+页详细文档），牵头跨技术/设计/测试3个部门完成方案对齐，推动项目按时交付",
+              "优化RAG检索机制与Prompt工程，搭建用户体验导向的专属语料库（覆盖20+情绪场景），设计车机端适配原型（Figma高保真原型），将智能体判断精准度提升40%+（从60%提升至84%），响应时间缩短68%（从5秒降至1.6秒）",
+              "设计并实施模型评估体系（准确率/召回率/F1/用户满意度），通过A/B测试验证优化效果，用户投诉率下降50%+",
+              "成功交付符合车规级标准的MVP版本，支撑10万+潜在用户场景覆盖，明确3大迭代方向（多模态交互/场景化语料扩充/跨应用联动）"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "institution": "安徽大学",
+            "degree": "本科",
+            "field": "计算机科学与技术",
+            "start_date": "2023-09",
+            "end_date": "2027-06",
+            "gpa": "专业前20%",
+            "highlights": [
+              "211院校，计算机科学与技术专业",
+              "主修课程：数据结构、数据库、计算机组成原理、算法设计"
+            ]
+          }
+        ],
+        "skills": [
+          {
+            "category": "AI产品核心能力",
+            "items": [
+              "Prompt Engineering（Few-shot、Chain-of-Thought、ReAct等高级技巧）",
+              "Agent架构（ReAct、ReWOO、AutoGPT、LangChain、LangGraph）",
+              "RAG系统（向量数据库、Embedding模型选型、检索策略优化、Rerank）",
+              "模型评估（A/B测试、指标体系：准确率/召回率/F1/用户满意度）",
+              "大模型应用（GPT-4/Claude/文心一言/通义千问/豆包/Kimi/DeepSeek）"
+            ]
+          },
+          {
+            "category": "AI原生开发工具",
+            "items": [
+              "AI Coding：Cursor、Windsurf、Vibe Coding、GitHub Copilot、Trae",
+              "本地部署：RAGFLOW、OLLAMA、Docker、LM Studio",
+              "开发框架：LangChain、LlamaIndex、Semantic Kernel、Haystack"
+            ]
+          },
+          {
+            "category": "产品设计与协作",
+            "items": [
+              "原型设计：Figma、墨刀、Axure（累计输出5+高保真原型）",
+              "项目管理：飞书、Notion、Jira、Trello（敏捷开发流程）",
+              "数据分析：SQL、Python、Pandas、Excel数据透视表",
+              "PRD撰写、技术文档、会议纪要"
+            ]
+          },
+          {
+            "category": "编程语言",
+            "items": [
+              "Python（熟练）、SQL（熟练）、JavaScript（基础）"
+            ]
+          }
+        ],
+        "projects": [],
+        "certifications": [],
+        "custom_sections": [],
+        "module_order": []
+      },
+      "created_at": "2026-04-28T15:53:17.638447",
+      "updated_at": "2026-04-28T15:53:17.638454"
+    },
+    {
+      "id": "20260428163647_14c0b754",
+      "jd_id": "20260427195447_ac9761b3",
+      "resume_data": {
+        "personal": {
+          "name": "税羿",
+          "phone": "13859126932",
+          "email": "13859126932@163.com",
+          "location": null,
+          "website": null,
+          "linkedin": null,
+          "github": null,
+          "avatar_url": null,
+          "title": "AI产品经理实习生"
+        },
+        "summary": "有两年 AI 产品相关行业经验，核心优势聚焦 AI 技术落地与产品全流程实践。Prompt Engineering 专家，熟练运用指令遵从、Few-shot、Chain-of-Thought、ReAct 等核心技巧；具备 AI 原生开发能力，熟练使用 Cursor、Vibe Coding 等工具；深度理解 Agent 系统设计与 RAG 优化，具备从需求调研到效果迭代的完整闭环经验。自驱力强，持续追踪 AI 前沿资讯，始终以\"技术落地 + 用户体验\"为核心。",
+        "work_experience": [
+          {
+            "company": "上海哔哩哔哩科技有限公司",
+            "title": "AI产品实习生",
+            "location": "上海",
+            "start_date": "2026-01",
+            "end_date": "2026-04",
+            "highlights": [
+              "主导TTS纠错链路的设计与持续优化，建立多音字词表、生僻字词表等语音资产库，协同语音团队完成模型训练，推动TTS准确率由75%提升至95%",
+              "负责语音Agent的Demo设计与开发，使用 Claudecode快速完成原型验证，成功将GUI能力迁移为LUI能力，实现与主Agent功能的高效整合",
+              "参与花生Agent本地检索模块的设计与Demo搭建，基于RAG-VLM链路实现用户文案与素材的精准匹配，设计分级检索策略，匹配效率提升约45%",
+              "设计并实施 A/B 测试验证优化效果，通过埋点数据分析用户行为，迭代优化产品体验"
+            ]
+          },
+          {
+            "company": "木卫四（北京）科技有限公司",
+            "title": "AI产品实习生",
+            "location": "北京",
+            "start_date": "2025-06",
+            "end_date": "2025-10",
+            "highlights": [
+              "核心负责星途车机端情绪仓智能体 MVP 研发，主导需求拆解与 PRD 输出（20+ 页详细文档），牵头跨技术/设计/测试 3 个部门完成方案对齐，推动项目按时交付",
+              "优化 RAG 检索机制与 Prompt 工程，搭建用户体验导向的专属语料库（覆盖20+情绪场景），设计车机端适配原型，将智能体判断精准度提升40%+（从60%提升至84%），响应时间缩短68%（从5秒降至1.6秒）",
+              "设计并实施模型评估体系（准确率/召回率/F1/用户满意度），通过 A/B 测试验证优化效果，用户投诉率下降50%+",
+              "成功交付符合车规级标准的 MVP 版本，支撑 10 万+ 潜在用户场景覆盖，明确 3 大迭代方向"
+            ]
+          }
+        ],
+        "education": [
+          {
+            "institution": "安徽大学",
+            "degree": "本科",
+            "field": "计算机科学与技术",
+            "start_date": "2023-09",
+            "end_date": "2027-06",
+            "gpa": "专业排名前20%",
+            "highlights": []
+          }
+        ],
+        "skills": [
+          {
+            "category": "AI产品核心能力",
+            "items": [
+              "Prompt Engineering（Few-shot/CoT/ReAct/ToT）",
+              "Agent 架构（ReAct/ReWOO/LangChain/LangGraph）",
+              "RAG 系统（向量检索/Embedding/Rerank）",
+              "模型评估（A/B测试/指标体系）"
+            ]
+          },
+          {
+            "category": "AI开发工具",
+            "items": [
+              "Cursor/Windsurf/Vibe Coding（AI辅助编程）",
+              "LangChain/LlamaIndex（Agent开发）",
+              "RAGFLOW/OLLAMA/Docker（本地部署）"
+            ]
+          },
+          {
+            "category": "数据分析与编程",
+            "items": [
+              "Python（熟练）",
+              "SQL（熟练）",
+              "Pandas/NumPy",
+              "ChromaDB/Pinecone"
+            ]
+          },
+          {
+            "category": "原型与协作工具",
+            "items": [
+              "Figma/墨刀/Axure",
+              "飞书/Notion/Jira",
+              "Excel/数据透视表"
+            ]
+          }
+        ],
+        "projects": [],
+        "certifications": [],
+        "custom_sections": [],
+        "module_order": []
+      },
+      "created_at": "2026-04-28T16:36:47.695480",
+      "updated_at": "2026-04-28T16:36:47.695486"
+    }
+  ]
+}

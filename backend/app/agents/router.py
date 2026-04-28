@@ -1,6 +1,7 @@
 """Router Agent - 意图分类与路由"""
 
 import re
+from typing import Optional
 
 from app.models.base import LLMProvider, get_llm_provider
 
@@ -39,7 +40,7 @@ ROUTER_SYSTEM_PROMPT = """你是一个意图分类器。根据用户消息，判
 只输出类别名称，不要解释。"""
 
 
-def classify_by_keywords(message: str) -> str | None:
+def classify_by_keywords(message: str) -> Optional[str]:
     """基于关键词的快速意图分类"""
     message_lower = message.lower()
     scores: dict[str, int] = {}
@@ -53,7 +54,7 @@ def classify_by_keywords(message: str) -> str | None:
     return None
 
 
-async def classify_by_llm(message: str, provider: LLMProvider | None = None) -> str:
+async def classify_by_llm(message: str, provider: Optional[LLMProvider] = None) -> str:
     """基于 LLM 的意图分类 (关键词匹配失败时的后备)"""
     provider = provider or get_llm_provider()
     result = await provider.chat(
@@ -68,9 +69,20 @@ async def classify_by_llm(message: str, provider: LLMProvider | None = None) -> 
     return intent if intent in valid else "general_chat"
 
 
-async def route(message: str, provider: LLMProvider | None = None) -> str:
+async def route(message: str, provider: Optional[LLMProvider] = None) -> str:
     """路由: 先关键词匹配, 后 LLM 分类"""
     intent = classify_by_keywords(message)
     if intent:
         return intent
     return await classify_by_llm(message, provider)
+
+
+class RouterAgent:
+    """意图路由 Agent：根据用户消息路由到对应的处理 Agent"""
+
+    def __init__(self, provider: Optional[LLMProvider] = None):
+        self.provider = provider
+
+    async def route(self, message: str) -> str:
+        """返回意图类型字符串"""
+        return await route(message, self.provider)

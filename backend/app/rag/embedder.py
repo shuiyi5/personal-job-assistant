@@ -2,6 +2,7 @@
 
 import uuid
 from datetime import datetime
+from typing import Optional
 
 from app.models.base import get_embedding_provider
 from app.rag.chunker import Chunk, chunk_text
@@ -12,7 +13,7 @@ from app.rag.store import upsert_documents, delete_document
 async def index_document(
     file_path: str,
     doc_type: str = "general",
-    doc_id: str | None = None,
+    doc_id: Optional[str] = None,
 ) -> dict:
     """
     完整索引管线: 解析 → 分块 → 嵌入 → 存储
@@ -53,6 +54,7 @@ async def index_document(
         "doc_id": doc_id,
         "chunk_count": len(chunks),
         "filename": doc.metadata.get("filename", ""),
+        "is_ocr": doc.metadata.get("is_ocr", False),
     }
 
 

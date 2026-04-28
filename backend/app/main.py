@@ -12,6 +12,19 @@ from app.config.settings import settings
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """应用生命周期管理"""
+    # 启动时将 JSON 配置加载到环境变量（供 LLM provider 等模块读取）
+    from pathlib import Path
+    import json
+    CONFIG_PATH = Path("./data/settings.json")
+    if CONFIG_PATH.exists():
+        try:
+            cfg = json.loads(CONFIG_PATH.read_text(encoding="utf-8"))
+            for k, v in cfg.items():
+                if k not in os.environ:
+                    os.environ[k] = v
+        except Exception:
+            pass
+
     os.makedirs(settings.upload_dir, exist_ok=True)
     os.makedirs(settings.chroma_db_path, exist_ok=True)
 
@@ -47,7 +60,7 @@ async def root():
 
 
 def register_routers():
-    from app.api import chat, documents, resume, interview, voice, health, settings_api
+    from app.api import chat, documents, resume, interview, voice, health, settings_api, jd_api
     app.include_router(health.router, prefix="/api", tags=["health"])
     app.include_router(chat.router, prefix="/api", tags=["chat"])
     app.include_router(documents.router, prefix="/api", tags=["documents"])
@@ -55,6 +68,7 @@ def register_routers():
     app.include_router(interview.router, prefix="/api", tags=["interview"])
     app.include_router(voice.router, prefix="/api", tags=["voice"])
     app.include_router(settings_api.router, prefix="/api", tags=["settings"])
+    app.include_router(jd_api.router, prefix="/api", tags=["jd"])
 
 
 register_routers()

@@ -2,6 +2,7 @@
 
 import os
 import uuid
+from typing import Optional
 
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException
 
@@ -49,13 +50,14 @@ async def upload_document(
         filename=result["filename"],
         doc_type=doc_type,
         chunk_count=result["chunk_count"],
+        is_ocr=result.get("is_ocr", False),
     )
 
 
 @router.get("/documents", response_model=DocumentList)
-async def list_documents():
-    """列出所有已上传的文档"""
-    docs = list_all_documents()
+async def list_documents(doc_type: Optional[str] = None):
+    """列出所有已上传的文档，可按 doc_type 过滤"""
+    docs = list_all_documents(doc_type=doc_type)
     items = [DocumentInfo(**d) for d in docs]
     return DocumentList(documents=items, total=len(items))
 

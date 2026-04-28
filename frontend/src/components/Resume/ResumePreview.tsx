@@ -14,14 +14,13 @@ export default function ResumePreview() {
   const isGenerating = useResumeStore(s => s.isGenerating)
   const [showPending, setShowPending] = useState(true)
   const [scale, setScale] = useState(1)
-  const [contentHeight, setContentHeight] = useState(1123)
   const containerRef = useRef<HTMLDivElement>(null)
   const innerRef = useRef<HTMLDivElement>(null)
 
   const entry = TEMPLATES[selectedTemplate]
   const TemplateComponent = entry.component
 
-  // Auto-fit: calculate scale so A4_WIDTH fills the container width (with small padding)
+  // Auto-fit: scale so A4_WIDTH fills the container width (with padding)
   const recalcScale = useCallback(() => {
     if (!containerRef.current) return
     const padding = 32
@@ -39,18 +38,6 @@ export default function ResumePreview() {
     ro.observe(el)
     return () => ro.disconnect()
   }, [recalcScale])
-
-  // Track actual content height so the outer wrapper can size correctly for scrolling
-  useEffect(() => {
-    if (!innerRef.current) return
-    const ro = new ResizeObserver(() => {
-      if (innerRef.current) {
-        setContentHeight(innerRef.current.scrollHeight)
-      }
-    })
-    ro.observe(innerRef.current)
-    return () => ro.disconnect()
-  }, [])
 
   const displayData = pendingResumeData && showPending ? pendingResumeData : resumeData
 
@@ -78,7 +65,6 @@ export default function ResumePreview() {
   }
 
   const scaledWidth = A4_WIDTH * scale
-  const scaledHeight = contentHeight * scale
 
   return (
     <div className="h-full flex flex-col bg-gray-100">
@@ -115,17 +101,28 @@ export default function ResumePreview() {
         </div>
       )}
 
-      {/* Resume preview area — scrollable vertically, width auto-fit */}
+      {/* Resume preview area — full scrolling, no clipping */}
       <div ref={containerRef} className="flex-1 overflow-y-auto overflow-x-hidden p-4 flex justify-center">
-        {/* Wrapper with explicit scaled dimensions so scrolling works correctly */}
+        {/*
+          Outer wrapper: width scales to fit container, height auto so content
+          is never clipped. The inner div applies CSS scale transform.
+          overflow:visible ensures the scaled content is never cut off.
+        */}
         <div
-          className="bg-white shadow-lg flex-shrink-0 relative"
-          style={{ width: scaledWidth, height: scaledHeight, overflow: 'hidden' }}
+          ref={innerRef}
+          className="bg-white shadow-lg flex-shrink-0"
+          style={{
+            width: scaledWidth,
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            // Height must match the actual rendered height of the scaled content.
+            // Using min-height so the wrapper grows with content; no overflow clipping.
+            minHeight: 'fit-content',
+            overflow: 'visible',
+          }}
         >
-          <div
-            ref={innerRef}
-            style={{ transform: `scale(${scale})`, transformOrigin: 'top left', width: A4_WIDTH }}
-          >
+          {/* Direct child: unscaled A4 width, natural height = content height */}
+          <div style={{ width: A4_WIDTH }}>
             <TemplateComponent data={displayData!} />
           </div>
         </div>

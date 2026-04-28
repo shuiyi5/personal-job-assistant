@@ -3,7 +3,14 @@ import {
   ChevronDown, ChevronRight, Plus, Trash2, User, Briefcase,
   GraduationCap, Wrench, FolderOpen, Award, Code2, GripVertical
 } from 'lucide-react'
-import { DndContext, closestCenter, DragEndEvent } from '@dnd-kit/core'
+import {
+  DndContext,
+  rectIntersection,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core'
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 import { useResumeStore } from '../../stores/resumeStore'
@@ -212,13 +219,12 @@ export default function ResumeEditor() {
   const pendingResumeData = useResumeStore(s => s.pendingResumeData)
   const setResumeData = useResumeStore(s => s.setResumeData)
   const setPendingResumeData = useResumeStore(s => s.setPendingResumeData)
+  const moduleOrder = useResumeStore(s => s.moduleOrder)
+  const setModuleOrder = useResumeStore(s => s.setModuleOrder)
   const [jsonMode, setJsonMode] = useState(false)
   const [jsonText, setJsonText] = useState('')
-  const [moduleOrder, setModuleOrder] = useState<string[]>([
-    'personal', 'summary', 'work_experience', 'education', 'projects', 'skills', 'certifications'
-  ])
 
-  // Load module order from settings
+  // Load module order from settings on mount
   useEffect(() => {
     api.get('/settings').then(res => {
       if (res.data.module_order && Array.isArray(res.data.module_order)) {
@@ -227,7 +233,7 @@ export default function ResumeEditor() {
     }).catch(err => {
       console.error('Failed to load module order:', err)
     })
-  }, [])
+  }, [setModuleOrder])
 
   // Show pending data when available, otherwise current data
   const hasPending = pendingResumeData !== null
@@ -243,21 +249,28 @@ export default function ResumeEditor() {
     }
   }, [data, hasPending, setPendingResumeData, setResumeData])
 
+  // Sensors: require 8px movement before drag starts (prevents accidental drags on scroll)
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+  )
+
   // Handle drag end
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event
     if (over && active.id !== over.id) {
-      setModuleOrder(items => {
-        const oldIndex = items.indexOf(active.id as string)
-        const newIndex = items.indexOf(over.id as string)
-        const newOrder = arrayMove(items, oldIndex, newIndex)
+      const oldIndex = moduleOrder.indexOf(active.id as string)
+      const newIndex = moduleOrder.indexOf(over.id as string)
+      if (oldIndex === -1 || newIndex === -1) return
+      const newOrder = arrayMove(moduleOrder, oldIndex, newIndex)
 
-        // Save to backend
-        api.put('/settings', { module_order: newOrder }).catch(err => {
-          console.error('Failed to save module order:', err)
-        })
+      // Update store immediately for reactive UI
+      setModuleOrder(newOrder)
 
-        return newOrder
+      // Save to backend (non-blocking)
+      api.put('/settings', { module_order: newOrder }).catch(err => {
+        console.error('Failed to save module order:', err)
       })
     }
   }
@@ -548,7 +561,7 @@ export default function ResumeEditor() {
         </button>
       </div>
 
-      <DndContext collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+      <DndContext sensors={sensors} collisionDetection={rectIntersection} onDragEnd={handleDragEnd}>
         <SortableContext items={moduleOrder} strategy={verticalListSortingStrategy}>
           {moduleOrder.map(moduleId => {
             const config = moduleConfigs[moduleId]

@@ -8,6 +8,7 @@ import ResumePage from './pages/ResumePage'
 import InterviewPage from './pages/InterviewPage'
 import MockInterviewPage from './pages/MockInterviewPage'
 import SettingsPage from './pages/SettingsPage'
+import JDManagerPage from './pages/JDManagerPage'
 import { useChatStore } from './stores/chatStore'
 
 function MainContent() {
@@ -19,6 +20,7 @@ function MainContent() {
       <Route path="/interview" element={<InterviewPage />} />
       <Route path="/mock-interview" element={<MockInterviewPage />} />
       <Route path="/settings" element={<SettingsPage />} />
+      <Route path="/jd" element={<JDManagerPage />} />
     </Routes>
   )
 }

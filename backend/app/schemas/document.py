@@ -9,6 +9,7 @@ class DocumentInfo(BaseModel):
     doc_type: str
     chunk_count: int = 0
     upload_date: str = ""
+    is_ocr: bool = False
 
 
 class DocumentList(BaseModel):

@@ -5,8 +5,25 @@ export interface TemplateProps {
   scale?: number
 }
 
+const DEFAULT_MODULE_ORDER = ['summary', 'work_experience', 'education', 'projects', 'certifications', 'skills', 'custom_sections']
+
+const SectionLabels: Record<string, string> = {
+  summary: '个人简介',
+  work_experience: '工作经历',
+  education: '教育背景',
+  skills: '专业技能',
+  projects: '项目经验',
+  certifications: '证书与奖项',
+  custom_sections: '自定义章节',
+}
+
+// CreativeTemplate: sidebar shows skills + certs always; main body follows module_order
 const CreativeTemplate = ({ data, scale = 1 }: TemplateProps) => {
-  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections } = data
+  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections, module_order } = data
+
+  const sections: string[] = module_order && module_order.length > 0
+    ? module_order.filter(s => DEFAULT_MODULE_ORDER.includes(s))
+    : DEFAULT_MODULE_ORDER
 
   const mainContactItems: { label: string; value: string }[] = []
   if (personal.email) mainContactItems.push({ label: 'Email', value: personal.email })
@@ -294,106 +311,85 @@ const CreativeTemplate = ({ data, scale = 1 }: TemplateProps) => {
         )}
       </div>
 
-      {/* Main Content */}
+      {/* Main Content — follows module_order; skills/certs are in sidebar so skip them here */}
       <div className="crv-main">
-        {/* Summary */}
-        {summary && (
-          <div className="crv-section">
-            <div className="crv-section-title">个人简介</div>
-            <div className="crv-summary">{summary}</div>
-          </div>
-        )}
-
-        {/* Work Experience */}
-        {work_experience.length > 0 && (
-          <div className="crv-section">
-            <div className="crv-section-title">工作经历</div>
-            {work_experience.map((exp, i) => (
-              <div key={i} className="crv-entry">
-                <div className="crv-entry-header">
-                  <span className="crv-entry-main">{exp.company}</span>
-                  <span className="crv-entry-date">{exp.start_date} - {exp.end_date}</span>
-                </div>
-                <div className="crv-entry-sub">
-                  {exp.title}
-                  {exp.location && ` | ${exp.location}`}
-                </div>
-                {exp.highlights.length > 0 && (
-                  <ul className="crv-highlights">
-                    {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Education */}
-        {education.length > 0 && (
-          <div className="crv-section">
-            <div className="crv-section-title">教育背景</div>
-            {education.map((edu, i) => (
-              <div key={i} className="crv-entry">
-                <div className="crv-entry-header">
-                  <span className="crv-entry-main">{edu.institution}</span>
-                  <span className="crv-entry-date">{edu.start_date} - {edu.end_date}</span>
-                </div>
-                <div className="crv-entry-sub">
-                  {edu.degree} - {edu.field}
-                  {edu.gpa && ` | GPA: ${edu.gpa}`}
-                </div>
-                {edu.highlights && edu.highlights.length > 0 && (
-                  <ul className="crv-highlights">
-                    {edu.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Projects */}
-        {projects.length > 0 && (
-          <div className="crv-section">
-            <div className="crv-section-title">项目经验</div>
-            {projects.map((proj, i) => (
-              <div key={i} className="crv-entry">
-                <div className="crv-entry-header">
-                  <span className="crv-entry-main">
-                    {proj.name}
-                    {proj.role && <span style={{ fontWeight: 400 }}> - {proj.role}</span>}
-                  </span>
-                  {(proj.start_date || proj.end_date) && (
-                    <span className="crv-entry-date">
-                      {proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}
-                    </span>
+        {sections.map(section => {
+          // skills + certs are always in sidebar — skip in main body
+          if (section === 'skills' || section === 'certifications') return null
+          if (section === 'summary' && summary) return (
+            <div key="summary" className="crv-section">
+              <div className="crv-section-title">{SectionLabels.summary}</div>
+              <div className="crv-summary">{summary}</div>
+            </div>
+          )
+          if (section === 'work_experience' && work_experience.length > 0) return (
+            <div key="work_experience" className="crv-section">
+              <div className="crv-section-title">{SectionLabels.work_experience}</div>
+              {work_experience.map((exp, i) => (
+                <div key={i} className="crv-entry">
+                  <div className="crv-entry-header">
+                    <span className="crv-entry-main">{exp.company}</span>
+                    <span className="crv-entry-date">{exp.start_date} - {exp.end_date}</span>
+                  </div>
+                  <div className="crv-entry-sub">{exp.title}{exp.location && ` | ${exp.location}`}</div>
+                  {exp.highlights.length > 0 && (
+                    <ul className="crv-highlights">{exp.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
                   )}
                 </div>
-                <div className="crv-entry-desc">{proj.description}</div>
-                {proj.highlights.length > 0 && (
-                  <ul className="crv-highlights">
-                    {proj.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-                {proj.tech_stack && proj.tech_stack.length > 0 && (
-                  <div className="crv-tech-stack">
-                    {proj.tech_stack.map((t, j) => (
-                      <span key={j} className="crv-tech-tag">{t}</span>
-                    ))}
+              ))}
+            </div>
+          )
+          if (section === 'education' && education.length > 0) return (
+            <div key="education" className="crv-section">
+              <div className="crv-section-title">{SectionLabels.education}</div>
+              {education.map((edu, i) => (
+                <div key={i} className="crv-entry">
+                  <div className="crv-entry-header">
+                    <span className="crv-entry-main">{edu.institution}</span>
+                    <span className="crv-entry-date">{edu.start_date} - {edu.end_date}</span>
                   </div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Custom Sections */}
-        {custom_sections && custom_sections.length > 0 && custom_sections.map((section, i) => (
-          <div key={i} className="crv-section">
-            <div className="crv-section-title">{section.title}</div>
-            <div className="crv-custom-content">{section.content}</div>
-          </div>
-        ))}
+                  <div className="crv-entry-sub">{edu.degree} - {edu.field}{edu.gpa && ` | GPA: ${edu.gpa}`}</div>
+                  {edu.highlights && edu.highlights.length > 0 && (
+                    <ul className="crv-highlights">{edu.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+          if (section === 'projects' && projects.length > 0) return (
+            <div key="projects" className="crv-section">
+              <div className="crv-section-title">{SectionLabels.projects}</div>
+              {projects.map((proj, i) => (
+                <div key={i} className="crv-entry">
+                  <div className="crv-entry-header">
+                    <span className="crv-entry-main">{proj.name}{proj.role && <span style={{ fontWeight: 400 }}> - {proj.role}</span>}</span>
+                    {(proj.start_date || proj.end_date) && (
+                      <span className="crv-entry-date">{proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}</span>
+                    )}
+                  </div>
+                  <div className="crv-entry-desc">{proj.description}</div>
+                  {proj.highlights.length > 0 && (
+                    <ul className="crv-highlights">{proj.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
+                  )}
+                  {proj.tech_stack && proj.tech_stack.length > 0 && (
+                    <div className="crv-tech-stack">{proj.tech_stack.map((t, j) => <span key={j} className="crv-tech-tag">{t}</span>)}</div>
+                  )}
+                </div>
+              ))}
+            </div>
+          )
+          if (section === 'custom_sections' && custom_sections && custom_sections.length > 0) return (
+            <div key="custom_sections">
+              {custom_sections.map((sec, i) => (
+                <div key={i} className="crv-section">
+                  <div className="crv-section-title">{sec.title}</div>
+                  <div className="crv-custom-content">{sec.content}</div>
+                </div>
+              ))}
+            </div>
+          )
+          return null
+        })}
       </div>
     </div>
   )

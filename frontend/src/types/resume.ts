@@ -79,6 +79,7 @@ export interface ResumeData {
   projects: Project[]
   certifications: Certification[]
   custom_sections?: CustomSection[]
+  module_order?: string[]  // 模块显示顺序，空/undefined 表示使用模板默认顺序
 }
 
 /** Agent 思考消息 */

@@ -118,7 +118,9 @@ export default function SettingsPage() {
   const [provider, setProvider] = useState('claude')
   const [model, setModel] = useState('')
   const [envVars, setEnvVars] = useState<Record<string, string>>({})
+  const [providers, setProviders] = useState<Record<string, Record<string, string>>>({})
   const [expandedProvider, setExpandedProvider] = useState<string | null>(null)
+  const [resumeEditMode, setResumeEditMode] = useState<'panel' | 'newtab'>('panel')
 
   // Load settings from backend
   const loadSettings = useCallback(async () => {
@@ -136,7 +138,9 @@ export default function SettingsPage() {
         }
       }
       setEnvVars(vars)
+      setProviders(data.providers || {})
       setExpandedProvider(data.llm_provider)
+      setResumeEditMode(data.resume_edit_mode || 'panel')
     } catch {
       // fail silently on load
     } finally {
@@ -150,6 +154,73 @@ export default function SettingsPage() {
     setEnvVars(prev => ({ ...prev, [key]: value }))
   }
 
+  // 当切换 provider 时，自动从 providers 数据中同步 API Key 和模型名称
+  const handleProviderChange = (newProvider: string) => {
+    setProvider(newProvider)
+    setExpandedProvider(newProvider)
+
+    // custom 类型不使用 providers 配置，保持当前输入不变
+    if (newProvider === 'custom') return
+
+    // 同步对应提供商的 API Key 和模型到 envVars，并更新 model 字段
+    const prov = PROVIDERS.find(p => p.id === newProvider)
+    if (!prov) return
+
+    const newEnvVars = { ...envVars }
+
+    if (prov.id === 'ollama') {
+      // ollama 无 API Key，同步 base_url 和 model
+      const baseUrlField = prov.fields.find(f => f.type === 'url')
+      if (baseUrlField) {
+        const storedUrl = envVars[baseUrlField.key] || ''
+        // 如果当前没有配置（masked值），尝试用 providers 数据填充
+        if (!storedUrl || storedUrl.includes('***')) {
+          const provData = providers?.[prov.id]
+          if (provData?.[baseUrlField.key] && !provData[baseUrlField.key].includes('***')) {
+            newEnvVars[baseUrlField.key] = provData[baseUrlField.key]
+          }
+        }
+      }
+      const modelField = prov.fields.find(f => f.type === 'model')
+      if (modelField) {
+        const provData = providers?.[prov.id]
+        const storedModel = provData?.[modelField.key] || ''
+        if (storedModel && !storedModel.includes('***')) {
+          setModel(storedModel)
+        } else {
+          setModel('')
+        }
+      }
+    } else {
+      // 其他提供商：同步 API Key
+      const keyField = prov.fields.find(f => f.type === 'apikey')
+      if (keyField) {
+        const provData = providers?.[prov.id]
+        const storedKey = provData?.[keyField.key] || ''
+        // 如果 providers 中有真实值（非masked），同步到 envVars
+        if (storedKey && !storedKey.includes('***')) {
+          newEnvVars[keyField.key] = storedKey
+        }
+      }
+
+      // 同步模型名称
+      const modelField = prov.fields.find(f => f.type === 'model')
+      if (modelField) {
+        const provData = providers?.[prov.id]
+        const storedModel = provData?.[modelField.key] || ''
+        if (storedModel && !storedModel.includes('***')) {
+          setModel(storedModel)
+        } else {
+          setModel('')
+        }
+      } else {
+        setModel('')
+      }
+    }
+
+    setEnvVars(newEnvVars)
+  }
+
   const handleSave = async () => {
     setSaving(true)
     setSaveStatus('idle')
@@ -158,6 +229,7 @@ export default function SettingsPage() {
         llm_provider: provider,
         llm_model: model,
         env_vars: envVars,
+        resume_edit_mode: resumeEditMode,
       })
       setSaveStatus('success')
       setTimeout(() => setSaveStatus('idle'), 3000)
@@ -190,10 +262,7 @@ export default function SettingsPage() {
           </label>
           <select
             value={provider}
-            onChange={e => {
-              setProvider(e.target.value)
-              setExpandedProvider(e.target.value)
-            }}
+            onChange={e => handleProviderChange(e.target.value)}
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
           >
             {PROVIDERS.map(p => (
@@ -215,6 +284,22 @@ export default function SettingsPage() {
             className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400"
           />
           <p className="text-xs text-gray-400 mt-1">留空则使用提供商默认模型</p>
+        </section>
+
+        {/* Resume edit mode */}
+        <section className="mb-6">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            简历编辑跳转方式
+          </label>
+          <select
+            value={resumeEditMode}
+            onChange={e => setResumeEditMode(e.target.value as 'panel' | 'newtab')}
+            className="w-full border rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-400 bg-white"
+          >
+            <option value="panel">右侧面板切换</option>
+            <option value="newtab">新标签页打开</option>
+          </select>
+          <p className="text-xs text-gray-400 mt-1">在 JD 管理页面编辑简历时的行为</p>
         </section>
 
         {/* Provider configs */}

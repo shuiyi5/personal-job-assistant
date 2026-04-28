@@ -41,13 +41,49 @@ async def chat(req: ChatRequestWithContext):
 
     async def generate():
         async for event in agent.stream(message, history):
-            # 拦截 format_resume 工具结果，转为 resume_data 事件
             if event["type"] == "tool_result" and event.get("tool") == "format_resume":
+                # 拦截 format_resume 工具结果，转为 resume_data 事件
                 try:
                     data = json.loads(event["result"])
                     yield _sse_line({"type": "resume_data", "data": data})
                 except (json.JSONDecodeError, KeyError):
                     yield _sse_line(event)
+
+            elif event["type"] == "tool_result" and event.get("tool") == "save_resume_to_jd":
+                # 拦截 save_resume_to_jd 结果，显示保存成功信息
+                try:
+                    result = json.loads(event["result"])
+                    if result.get("status") == "success":
+                        yield _sse_line({"type": "text", "content": f"\n✅ 简历已成功保存到 JD（ID: {result.get('jd_id', '')}，简历ID: {result.get('resume_id', '')}）\n"})
+                    else:
+                        yield _sse_line({"type": "text", "content": f"\n❌ 保存失败: {result.get('message', '未知错误')}\n"})
+                except Exception:
+                    yield _sse_line(event)
+                yield _sse_line(event)
+
+            elif event["type"] == "tool_result" and event.get("tool") == "search_jd":
+                # 拦截 search_jd 结果，显示搜索到的 JD 数量
+                try:
+                    result = json.loads(event["result"])
+                    if result.get("status") == "success":
+                        yield _sse_line({"type": "text", "content": f"\n📋 找到 {result.get('count', 0)} 个匹配的 JD\n"})
+                    else:
+                        yield _sse_line({"type": "text", "content": f"\n🔍 {result.get('message', '没有找到匹配的 JD')}\n"})
+                except Exception:
+                    pass
+                yield _sse_line(event)
+
+            elif event["type"] == "tool_result" and event.get("tool") == "update_module_order":
+                # 拦截 update_module_order 结果，立即通知前端模块顺序已更改
+                try:
+                    result = json.loads(event["result"])
+                    new_order = result.get("module_order", [])
+                    if new_order:
+                        yield _sse_line({"type": "module_order_changed", "module_order": new_order})
+                except Exception:
+                    pass
+                yield _sse_line(event)
+
             else:
                 yield _sse_line(event)
 

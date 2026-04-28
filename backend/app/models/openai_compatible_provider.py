@@ -5,7 +5,7 @@
 """
 
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, AsyncIterator, Union
 
 import openai
 
@@ -67,7 +67,26 @@ class OpenAICompatibleProvider(LLMProvider):
         messages: list[dict],
         tools: list[dict],
         system: str = "",
+        stream: bool = False,
         **kwargs,
+    ) -> Union[dict, AsyncIterator[dict]]:
+        """
+        带工具调用的聊天。
+
+        Args:
+            stream=True 时返回 AsyncIterator[dict]，逐块yield:
+              - {"type": "text", "content": str}  文本片段
+              - {"type": "tool_call", "tool_call": dict}  工具调用就绪
+              - {"type": "done", "text": str, "tool_calls": [...], "reasoning_content": str|None}
+            stream=False 时返回完整 dict（行为同旧版）。
+        """
+        if not stream:
+            return await self._chat_with_tools_blocking(messages, tools, system, **kwargs)
+
+        return self._chat_with_tools_streaming(messages, tools, system, **kwargs)
+
+    async def _chat_with_tools_blocking(
+        self, messages: list[dict], tools: list[dict], system: str, **kwargs
     ) -> dict:
         async def _call():
             response = await self._client.chat.completions.create(
@@ -86,10 +105,7 @@ class OpenAICompatibleProvider(LLMProvider):
                         "input": json.loads(tc.function.arguments),
                         "id": tc.id,
                     })
-
-            # 保留 reasoning_content (Kimi K2.5 / DeepSeek-R1 等 thinking 模式需要)
             reasoning_content = getattr(msg, "reasoning_content", None)
-
             stop_reason = "tool_use" if tool_calls else "end_turn"
             return {
                 "text": text,
@@ -99,3 +115,62 @@ class OpenAICompatibleProvider(LLMProvider):
             }
 
         return await self._retry(_call)
+
+    async def _chat_with_tools_streaming(
+        self, messages: list[dict], tools: list[dict], system: str, **kwargs
+    ) -> AsyncIterator[dict]:
+        """流式版本：文本 token 边收边 yield，工具调用就绪后一次性 yield"""
+        stream = await self._client.chat.completions.create(
+            model=self._model,
+            messages=self._build_messages(messages, system),
+            tools=self._convert_tools(tools),
+            max_tokens=kwargs.get("max_tokens", 4096),
+            stream=True,
+        )
+
+        text_parts: list[str] = []
+        # 暂存工具调用片段
+        tool_call_deltas: dict[str, dict] = {}  # id -> {name, arguments_str}
+
+        async for chunk in stream:
+            delta = chunk.choices[0].delta
+
+            # 1. 文本片段
+            if delta.content:
+                text_parts.append(delta.content)
+                yield {"type": "text", "content": delta.content}
+
+            # 2. 工具调用片段
+            if delta.tool_calls:
+                for tc_delta in delta.tool_calls:
+                    tid = tc_delta.index
+                    if tid not in tool_call_deltas:
+                        tool_call_deltas[tid] = {"id": "", "name": "", "arguments": ""}
+                    if tc_delta.id:
+                        tool_call_deltas[tid]["id"] = tc_delta.id
+                    if tc_delta.function:
+                        if tc_delta.function.name:
+                            tool_call_deltas[tid]["name"] = tc_delta.function.name
+                        if tc_delta.function.arguments:
+                            tool_call_deltas[tid]["arguments"] += tc_delta.function.arguments
+
+        # 3. 流结束，组装完整工具调用
+        tool_calls = []
+        for tid in sorted(tool_call_deltas.keys()):
+            entry = tool_call_deltas[tid]
+            try:
+                parsed_args = json.loads(entry["arguments"])
+            except json.JSONDecodeError:
+                parsed_args = {"raw": entry["arguments"]}
+            tool_calls.append({
+                "name": entry["name"],
+                "input": parsed_args,
+                "id": entry["id"],
+            })
+
+        yield {
+            "type": "done",
+            "text": "".join(text_parts),
+            "tool_calls": tool_calls,
+            "reasoning_content": None,
+        }

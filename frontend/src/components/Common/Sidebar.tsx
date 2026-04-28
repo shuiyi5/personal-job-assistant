@@ -1,10 +1,11 @@
 import { Link, useLocation } from 'react-router-dom'
-import { MessageSquare, FileText, Briefcase, Mic, FolderOpen, Settings } from 'lucide-react'
+import { MessageSquare, FileText, Briefcase, Mic, FolderOpen, Settings, Target } from 'lucide-react'
 
 const navItems = [
   { path: '/', icon: MessageSquare, label: '智能助手' },
   { path: '/documents', icon: FolderOpen, label: '文档管理' },
   { path: '/resume', icon: FileText, label: '简历编辑' },
+  { path: '/jd', icon: Target, label: 'JD 简历' },
   { path: '/interview', icon: Briefcase, label: '面试准备' },
   { path: '/mock-interview', icon: Mic, label: '模拟面试' },
   { path: '/settings', icon: Settings, label: '设置' },

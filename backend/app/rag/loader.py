@@ -1,7 +1,10 @@
 """文档解析器 - 支持 PDF, DOCX, TXT"""
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -12,8 +15,10 @@ class Document:
 
 
 def load_pdf(file_path: str) -> Document:
-    """解析 PDF 文件"""
+    """解析 PDF 文件，扫描件自动触发 OCR"""
     from PyPDF2 import PdfReader
+
+    from app.rag.ocr import is_scanned_pdf, try_ocr_for_pdf
 
     reader = PdfReader(file_path)
     pages = []
@@ -22,12 +27,24 @@ def load_pdf(file_path: str) -> Document:
         if text:
             pages.append(text.strip())
 
+    full_text = "\n\n".join(pages)
+
+    # 如果检测为扫描件（或文字极少），尝试 OCR
+    is_ocr = False
+    if is_scanned_pdf(file_path, full_text):
+        ocr_text = try_ocr_for_pdf(file_path)
+        if ocr_text:
+            logger.info(f"PDF OCR 成功: {file_path}, 提取文字 {len(ocr_text)} 字符")
+            full_text = ocr_text
+            is_ocr = True
+
     return Document(
-        text="\n\n".join(pages),
+        text=full_text,
         metadata={
             "filename": Path(file_path).name,
             "file_type": "pdf",
             "page_count": len(reader.pages),
+            "is_ocr": is_ocr,
         },
     )
 

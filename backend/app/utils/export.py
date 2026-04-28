@@ -347,25 +347,81 @@ def _render_resume_html(data: dict, template_id: str, module_order: list[str] = 
         </div>"""
 
 
+# ── PDF 生成器 (fpdf2, 跨平台无需 GTK) ──────────────────────────────
+
+def _make_pdf():
+    """创建配置好中文字体的 FPDF 实例, 返回 (pdf, font_name)"""
+    from fpdf import FPDF
+
+    pdf = FPDF(unit='pt', format='A4')
+    pdf.set_auto_page_break(auto=True, margin=40)
+
+    # 注入中文字体 (macOS / Linux 兼容)
+    font_paths = [
+        '/System/Library/Fonts/STHeiti Medium.ttc',
+        '/System/Library/Fonts/Hiragino Sans GB.ttc',
+        '/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc',
+        '/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc',
+    ]
+    chinese_font = None
+    for fp in font_paths:
+        if os.path.exists(fp):
+            chinese_font = fp
+            break
+
+    font_name = 'Helvetica'
+    if chinese_font:
+        try:
+            pdf.add_font('chinese', '', chinese_font)
+            font_name = 'chinese'
+        except Exception:
+            pass
+
+    return pdf, font_name
+
+
 # ── Markdown 导出 (旧版兼容) ──────────────────────────────
 
 def markdown_to_pdf(content: str) -> str:
-    """Markdown → PDF, 返回文件路径 (需要 weasyprint)"""
-    try:
-        from weasyprint import HTML
-    except ImportError:
-        raise RuntimeError("PDF 导出需要安装 weasyprint 及其系统依赖")
+    """Markdown → PDF, 返回文件路径 (fpdf2)"""
+    pdf, font_name = _make_pdf()
+    pdf.add_page()
 
-    html_body = md.markdown(content, extensions=["tables", "fenced_code", "nl2br"])
-    full_html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{RESUME_CSS}</style></head>
-<body>{html_body}</body></html>"""
+    # 简单 Markdown 渲染
+    pdf.set_font(font_name, size=11)
+    pdf.set_text_color(51, 51, 51)
+
+    for line in content.split('\n'):
+        line = line.strip()
+        if not line:
+            pdf.ln(6)
+            continue
+        if line.startswith('# '):
+            pdf.set_font(font_name, size=18)
+            pdf.set_text_color(26, 26, 26)
+            pdf.ln(4)
+            pdf.multi_cell(0, 20, line[2:], align='L')
+            pdf.ln(4)
+            pdf.set_font(font_name, size=11)
+            pdf.set_text_color(51, 51, 51)
+        elif line.startswith('## '):
+            pdf.set_font(font_name, size=14)
+            pdf.set_text_color(44, 62, 80)
+            pdf.ln(6)
+            pdf.multi_cell(0, 16, line[3:], align='L')
+            pdf.ln(2)
+            pdf.set_font(font_name, size=11)
+            pdf.set_text_color(51, 51, 51)
+        elif line.startswith('- '):
+            pdf.set_x(pdf.l_margin + 16)
+            pdf.multi_cell(0, 14, '• ' + line[2:], align='L')
+        else:
+            pdf.multi_cell(0, 14, line, align='L')
 
     filename = f"resume_{uuid.uuid4().hex[:8]}.pdf"
     output_path = os.path.join(settings.upload_dir, filename)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    HTML(string=full_html).write_pdf(output_path)
+    pdf.output(output_path)
     return output_path
 
 
@@ -415,37 +471,229 @@ def markdown_to_docx(content: str) -> str:
     return output_path
 
 
-# ── 结构化数据导出 ──────────────────────────────────────
+# ── 结构化数据导出 (fpdf2) ──────────────────────────────────────
 
 def structured_to_pdf(data: dict, template_id: str = "professional", module_order: list[str] = None) -> str:
-    """结构化简历数据 + 模板 → PDF (需要 weasyprint)"""
-    try:
-        from weasyprint import HTML
-    except ImportError:
-        raise RuntimeError("PDF 导出需要安装 weasyprint 及其系统依赖")
-
+    """结构化简历数据 + 模板 → PDF (fpdf2, 跨平台无需 GTK)"""
     if module_order is None:
-        from app.api.settings_api import _read_config
-        import json
-        cfg = _read_config()
-        raw = cfg.get("module_order", "")
-        try:
-            module_order = json.loads(raw) if raw else None
-        except Exception:
-            module_order = None
+        module_order = ["summary", "work_experience", "education", "skills", "projects", "certifications"]
 
-    css = TEMPLATE_CSS.get(template_id, TEMPLATE_CSS["professional"])
-    body_html = _render_resume_html(data, template_id, module_order)
+    pdf, fn = _make_pdf()
+    pdf.add_page()
 
-    full_html = f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><style>{css}</style></head>
-<body>{body_html}</body></html>"""
+    # ── 模板样式配置 ──────────────────────────────────
+    styles = {
+        "professional": dict(
+            header_bg=(30, 58, 95), header_fg=(255, 255, 255),
+            section_color=(30, 58, 95), entry_main=(26, 26, 26),
+            entry_sub=(68, 68, 68), entry_date=(102, 102, 102),
+            font=fn, font_size=11,
+        ),
+        "minimalist": dict(
+            header_bg=(255, 255, 255), header_fg=(26, 26, 26),
+            section_color=(170, 170, 170), entry_main=(26, 26, 26),
+            entry_sub=(119, 119, 119), entry_date=(170, 170, 170),
+            font=fn, font_size=10.5,
+        ),
+        "tech": dict(
+            header_bg=(30, 41, 59), header_fg=(34, 211, 238),
+            section_color=(34, 211, 238), entry_main=(226, 232, 240),
+            entry_sub=(34, 211, 238), entry_date=(100, 116, 139),
+            font=fn, font_size=10.5,
+        ),
+        "academic": dict(
+            header_bg=(255, 255, 255), header_fg=(26, 26, 26),
+            section_color=(26, 26, 26), entry_main=(26, 26, 26),
+            entry_sub=(68, 68, 68), entry_date=(85, 85, 85),
+            font=fn, font_size=11,
+        ),
+        "executive": dict(
+            header_bg=(255, 255, 255), header_fg=(26, 26, 26),
+            section_color=(184, 134, 11), entry_main=(26, 26, 26),
+            entry_sub=(184, 134, 11), entry_date=(136, 136, 136),
+            font=fn, font_size=11,
+        ),
+        "creative": dict(
+            header_bg=(99, 102, 241), header_fg=(255, 255, 255),
+            section_color=(99, 102, 241), entry_main=(26, 26, 26),
+            entry_sub=(99, 102, 241), entry_date=(153, 153, 153),
+            font=fn, font_size=10.5,
+        ),
+    }
+    s = styles.get(template_id, styles["professional"])
+    W = pdf.w - pdf.l_margin - pdf.r_margin  # 正文字宽
 
+    def set_color(rgb):
+        pdf.set_text_color(*rgb)
+
+    def draw_header():
+        p = data.get("personal", {})
+        name = p.get('name', '')
+        title = p.get('title', '')
+
+        # 填背景色
+        pdf.set_fill_color(*s['header_bg'])
+        pdf.rect(0, 0, pdf.w, 140, 'F')
+
+        set_color(s['header_fg'])
+        pdf.set_font(s['font'], size=22)
+        pdf.set_xy(pdf.l_margin, 18)
+        pdf.cell(W, 28, name, align='C')
+        if title:
+            pdf.ln(4)
+            pdf.set_font(s['font'], size=12)
+            pdf.cell(W, 16, title, align='C')
+
+        # 联系信息行
+        contact = []
+        for k in ['phone', 'email', 'location', 'website', 'linkedin', 'github']:
+            v = p.get(k)
+            if v:
+                contact.append(str(v))
+        if contact:
+            pdf.ln(4)
+            pdf.set_font(s['font'], size=9)
+            pdf.cell(W, 14, ' | '.join(contact), align='C')
+
+        pdf.ln(20)
+
+    def draw_section_title(title: str):
+        set_color(s['section_color'])
+        pdf.set_font(s['font'], 'B', 12)
+        pdf.cell(W, 18, title.upper(), align='L')
+        pdf.ln(18)
+        # 下划线
+        y = pdf.get_y()
+        pdf.set_draw_color(*s['section_color'])
+        pdf.set_line_width(0.8)
+        pdf.line(pdf.l_margin, y, pdf.l_margin + W, y)
+        pdf.ln(6)
+
+    def draw_entry_header(main: str, date: str = '', x=None):
+        y0 = pdf.get_y()
+        if x is None:
+            x = pdf.l_margin
+        fw = W - 120
+        set_color(s['entry_main'])
+        pdf.set_font(s['font'], 'B', 11)
+        pdf.set_x(x)
+        pdf.cell(fw, 14, main, align='L')
+        if date:
+            set_color(s['entry_date'])
+            pdf.set_font(s['font'], size=9)
+            pdf.cell(120, 14, date, align='R')
+        pdf.ln(14)
+        set_color(s['entry_sub'])
+
+    def draw_bullets(items: list):
+        for item in items:
+            set_color(s['entry_sub'])
+            pdf.set_x(pdf.l_margin + 14)
+            pdf.set_font(s['font'], size=10)
+            pdf.multi_cell(W - 14, 12, '• ' + str(item), align='L')
+
+    # 渲染
+    draw_header()
+    set_color(s['entry_sub'])
+
+    for module_id in module_order:
+        if module_id == 'personal':
+            continue
+
+        if module_id == 'summary' and data.get('summary'):
+            draw_section_title('个人简介')
+            set_color(s['entry_sub'])
+            pdf.set_font(s['font'], size=s['font_size'])
+            pdf.multi_cell(W, 14, str(data['summary']), align='L')
+            pdf.ln(8)
+
+        elif module_id == 'work_experience' and data.get('work_experience'):
+            draw_section_title('工作经历')
+            for exp in data['work_experience']:
+                loc = exp.get('location', '')
+                date_range = f"{exp.get('start_date','')} - {exp.get('end_date','')}"
+                draw_entry_header(
+                    f"{exp.get('title','')} @ {exp.get('company','')}{' · '+loc if loc else ''}",
+                    date_range
+                )
+                draw_bullets(exp.get('highlights', []))
+                pdf.ln(6)
+
+        elif module_id == 'education' and data.get('education'):
+            draw_section_title('教育背景')
+            for edu in data['education']:
+                gpa = edu.get('gpa', '')
+                date_range = f"{edu.get('start_date','')} - {edu.get('end_date','')}"
+                detail = f"{edu.get('degree','')} - {edu.get('field','')}"
+                if gpa:
+                    detail += f' | GPA: {gpa}'
+                draw_entry_header(
+                    f"{edu.get('institution','')}",
+                    date_range
+                )
+                set_color(s['entry_sub'])
+                pdf.set_x(pdf.l_margin)
+                pdf.set_font(s['font'], size=s['font_size'])
+                pdf.multi_cell(W, 12, detail, align='L')
+                draw_bullets(edu.get('highlights', []))
+                pdf.ln(4)
+
+        elif module_id == 'skills' and data.get('skills'):
+            draw_section_title('专业技能')
+            for sg in data['skills']:
+                set_color(s['entry_main'])
+                pdf.set_font(s['font'], 'B', s['font_size'])
+                pdf.cell(80, 14, sg.get('category', ''), align='L')
+                set_color(s['entry_sub'])
+                pdf.set_font(s['font'], size=s['font_size'])
+                pdf.multi_cell(W - 80, 14, ', '.join(sg.get('items', [])), align='L')
+            pdf.ln(6)
+
+        elif module_id == 'projects' and data.get('projects'):
+            draw_section_title('项目经验')
+            for proj in data['projects']:
+                role = proj.get('role', '')
+                date_range = f"{proj.get('start_date','')} - {proj.get('end_date','')}"
+                main = proj.get('name', '')
+                if role:
+                    main += f' - {role}'
+                draw_entry_header(main, date_range)
+                if proj.get('description'):
+                    set_color(s['entry_sub'])
+                    pdf.set_font(s['font'], size=s['font_size'])
+                    pdf.multi_cell(W, 12, str(proj['description']), align='L')
+                draw_bullets(proj.get('highlights', []))
+                tech = proj.get('tech_stack', [])
+                if tech:
+                    set_color(s['section_color'])
+                    pdf.set_font(s['font'], size=9)
+                    pdf.set_x(pdf.l_margin)
+                    pdf.cell(W, 12, 'Tech: ' + ', '.join(tech), align='L')
+                pdf.ln(4)
+
+        elif module_id == 'certifications' and data.get('certifications'):
+            draw_section_title('证书与奖项')
+            for cert in data['certifications']:
+                line = cert.get('name', '')
+                detail = []
+                if cert.get('issuer'):
+                    detail.append(cert['issuer'])
+                if cert.get('date'):
+                    detail.append(cert['date'])
+                set_color(s['entry_main'])
+                pdf.set_font(s['font'], 'B', s['font_size'])
+                pdf.cell(W, 13, line, align='L')
+                if detail:
+                    set_color(s['entry_date'])
+                    pdf.set_font(s['font'], size=9)
+                    pdf.cell(0, 13, ' - '.join(detail), align='L')
+                pdf.ln(13)
+
+    # 输出
     filename = f"resume_{uuid.uuid4().hex[:8]}.pdf"
     output_path = os.path.join(settings.upload_dir, filename)
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
-
-    HTML(string=full_html).write_pdf(output_path)
+    pdf.output(output_path)
     return output_path
 
 

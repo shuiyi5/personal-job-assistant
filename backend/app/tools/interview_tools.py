@@ -1,5 +1,7 @@
 """面试工具 - 出题、评估、反馈"""
 
+from typing import Optional
+
 from app.tools.base import BaseTool
 
 
@@ -85,7 +87,7 @@ class EvaluateAnswerTool(BaseTool):
         question: str,
         answer: str,
         context: str = "",
-        criteria: list[str] | None = None,
+        criteria: Optional[list[str]] = None,
     ) -> dict:
         criteria = criteria or ["准确性", "完整性", "深度", "表达清晰度"]
         return {

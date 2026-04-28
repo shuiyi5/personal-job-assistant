@@ -1,7 +1,7 @@
 """Ollama 本地模型 LLM 适配器"""
 
 import json
-from typing import AsyncGenerator
+from typing import AsyncGenerator, AsyncIterator, Union
 
 import httpx
 
@@ -58,20 +58,27 @@ class OllamaProvider(LLMProvider):
         messages: list[dict],
         tools: list[dict],
         system: str = "",
+        stream: bool = False,
         **kwargs,
+    ) -> Union[dict, AsyncIterator[dict]]:
+        if stream:
+            return self._chat_with_tools_streaming(messages, tools, system, **kwargs)
+        return await self._chat_with_tools_blocking(messages, tools, system, **kwargs)
+
+    async def _chat_with_tools_blocking(
+        self, messages: list[dict], tools: list[dict], system: str, **kwargs
     ) -> dict:
-        """Ollama 工具调用 (通过 prompt 模拟，部分模型原生支持)"""
-        # 将工具定义转为 Ollama 格式
-        ollama_tools = []
-        for t in tools:
-            ollama_tools.append({
+        ollama_tools = [
+            {
                 "type": "function",
                 "function": {
                     "name": t["name"],
                     "description": t.get("description", ""),
                     "parameters": t.get("input_schema", {}),
                 },
-            })
+            }
+            for t in tools
+        ]
 
         async def _call():
             response = await self._client.post(
@@ -102,3 +109,40 @@ class OllamaProvider(LLMProvider):
             return {"text": text, "tool_calls": tool_calls, "stop_reason": stop_reason}
 
         return await self._retry(_call)
+
+    async def _chat_with_tools_streaming(
+        self, messages: list[dict], tools: list[dict], system: str, **kwargs
+    ) -> AsyncIterator[dict]:
+        ollama_tools = [
+            {
+                "type": "function",
+                "function": {
+                    "name": t["name"],
+                    "description": t.get("description", ""),
+                    "parameters": t.get("input_schema", {}),
+                },
+            }
+            for t in tools
+        ]
+
+        text_parts: list[str] = []
+
+        async with self._client.stream(
+            "POST",
+            "/api/chat",
+            json={
+                "model": self._model,
+                "messages": self._build_messages(messages, system),
+                "tools": ollama_tools,
+                "stream": True,
+            },
+        ) as response:
+            async for line in response.aiter_lines():
+                if line:
+                    data = json.loads(line)
+                    if content := data.get("message", {}).get("content", ""):
+                        text_parts.append(content)
+                        yield {"type": "text", "content": content}
+
+        full = await self._chat_with_tools_blocking(messages, tools, system, **kwargs)
+        yield {"type": "done", **full}

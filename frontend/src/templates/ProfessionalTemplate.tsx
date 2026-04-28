@@ -5,8 +5,25 @@ export interface TemplateProps {
   scale?: number
 }
 
+const DEFAULT_MODULE_ORDER = ['summary', 'work_experience', 'education', 'skills', 'projects', 'certifications', 'custom_sections']
+
+const SectionLabels: Record<string, string> = {
+  summary: '个人简介',
+  work_experience: '工作经历',
+  education: '教育背景',
+  skills: '专业技能',
+  projects: '项目经验',
+  certifications: '证书与奖项',
+  custom_sections: '自定义章节',
+}
+
 const ProfessionalTemplate = ({ data, scale = 1 }: TemplateProps) => {
-  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections } = data
+  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections, module_order } = data
+
+  // 动态模块顺序：使用 data.module_order，否则使用默认顺序
+  const sections: string[] = module_order && module_order.length > 0
+    ? module_order.filter(s => DEFAULT_MODULE_ORDER.includes(s))
+    : DEFAULT_MODULE_ORDER
 
   const contactItems: string[] = []
   if (personal.phone) contactItems.push(personal.phone)
@@ -15,6 +32,131 @@ const ProfessionalTemplate = ({ data, scale = 1 }: TemplateProps) => {
   if (personal.website) contactItems.push(personal.website)
   if (personal.linkedin) contactItems.push(personal.linkedin)
   if (personal.github) contactItems.push(personal.github)
+
+  const renderSummary = () => summary ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.summary}</div>
+      <div className="prof-summary">{summary}</div>
+    </div>
+  ) : null
+
+  const renderWorkExperience = () => work_experience.length > 0 ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.work_experience}</div>
+      {work_experience.map((exp, i) => (
+        <div key={i} className="prof-entry">
+          <div className="prof-entry-header">
+            <span className="prof-entry-main">{exp.company}</span>
+            <span className="prof-entry-date">{exp.start_date} - {exp.end_date}</span>
+          </div>
+          <div className="prof-entry-sub">
+            {exp.title}
+            {exp.location && <span className="prof-entry-location"> | {exp.location}</span>}
+          </div>
+          {exp.highlights.length > 0 && (
+            <ul className="prof-highlights">
+              {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : null
+
+  const renderEducation = () => education.length > 0 ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.education}</div>
+      {education.map((edu, i) => (
+        <div key={i} className="prof-entry">
+          <div className="prof-entry-header">
+            <span className="prof-entry-main">{edu.institution}</span>
+            <span className="prof-entry-date">{edu.start_date} - {edu.end_date}</span>
+          </div>
+          <div className="prof-entry-sub">
+            {edu.degree} - {edu.field}
+            {edu.gpa && <span> | GPA: {edu.gpa}</span>}
+          </div>
+          {edu.highlights && edu.highlights.length > 0 && (
+            <ul className="prof-highlights">
+              {edu.highlights.map((h, j) => <li key={j}>{h}</li>)}
+            </ul>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : null
+
+  const renderSkills = () => skills.length > 0 ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.skills}</div>
+      <div className="prof-skills-grid">
+        {skills.map((group, i) => (
+          <div key={i} className="prof-skill-group">
+            <span className="prof-skill-category">{group.category}: </span>
+            <span className="prof-skill-items">{group.items.join(', ')}</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  ) : null
+
+  const renderProjects = () => projects.length > 0 ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.projects}</div>
+      {projects.map((proj, i) => (
+        <div key={i} className="prof-entry">
+          <div className="prof-entry-header">
+            <span className="prof-entry-main">
+              {proj.name}
+              {proj.role && <span style={{ fontWeight: 400, color: '#444' }}> - {proj.role}</span>}
+            </span>
+            {(proj.start_date || proj.end_date) && (
+              <span className="prof-entry-date">
+                {proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}
+              </span>
+            )}
+          </div>
+          <div className="prof-entry-sub">{proj.description}</div>
+          {proj.highlights.length > 0 && (
+            <ul className="prof-highlights">
+              {proj.highlights.map((h, j) => <li key={j}>{h}</li>)}
+            </ul>
+          )}
+          {proj.tech_stack && proj.tech_stack.length > 0 && (
+            <div className="prof-tech-stack">Tech: {proj.tech_stack.join(' / ')}</div>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : null
+
+  const renderCertifications = () => certifications.length > 0 ? (
+    <div className="prof-section">
+      <div className="prof-section-title">{SectionLabels.certifications}</div>
+      {certifications.map((cert, i) => (
+        <div key={i} className="prof-cert-item">
+          <span className="prof-cert-name">{cert.name}</span>
+          {(cert.issuer || cert.date) && (
+            <span className="prof-cert-detail">
+              {cert.issuer && ` - ${cert.issuer}`}
+              {cert.date && ` (${cert.date})`}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  ) : null
+
+  const renderCustomSections = () => custom_sections && custom_sections.length > 0 ? (
+    <>
+      {custom_sections.map((section, i) => (
+        <div key={i} className="prof-section">
+          <div className="prof-section-title">{section.title}</div>
+          <div className="prof-custom-content">{section.content}</div>
+        </div>
+      ))}
+    </>
+  ) : null
 
   return (
     <div
@@ -176,7 +318,7 @@ const ProfessionalTemplate = ({ data, scale = 1 }: TemplateProps) => {
         }
       `}</style>
 
-      {/* Header */}
+      {/* Header — 固定，不受 module_order 影响 */}
       <div className="prof-header">
         <div className="prof-header-name">{personal.name}</div>
         {personal.title && <div className="prof-header-title">{personal.title}</div>}
@@ -189,135 +331,18 @@ const ProfessionalTemplate = ({ data, scale = 1 }: TemplateProps) => {
         )}
       </div>
 
-      {/* Body */}
+      {/* Body — 按 module_order 动态渲染 */}
       <div className="prof-body">
-        {/* Summary */}
-        {summary && (
-          <div className="prof-section">
-            <div className="prof-section-title">个人简介</div>
-            <div className="prof-summary">{summary}</div>
-          </div>
-        )}
-
-        {/* Work Experience */}
-        {work_experience.length > 0 && (
-          <div className="prof-section">
-            <div className="prof-section-title">工作经历</div>
-            {work_experience.map((exp, i) => (
-              <div key={i} className="prof-entry">
-                <div className="prof-entry-header">
-                  <span className="prof-entry-main">{exp.company}</span>
-                  <span className="prof-entry-date">{exp.start_date} - {exp.end_date}</span>
-                </div>
-                <div className="prof-entry-sub">
-                  {exp.title}
-                  {exp.location && <span className="prof-entry-location"> | {exp.location}</span>}
-                </div>
-                {exp.highlights.length > 0 && (
-                  <ul className="prof-highlights">
-                    {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Education */}
-        {education.length > 0 && (
-          <div className="prof-section">
-            <div className="prof-section-title">教育背景</div>
-            {education.map((edu, i) => (
-              <div key={i} className="prof-entry">
-                <div className="prof-entry-header">
-                  <span className="prof-entry-main">{edu.institution}</span>
-                  <span className="prof-entry-date">{edu.start_date} - {edu.end_date}</span>
-                </div>
-                <div className="prof-entry-sub">
-                  {edu.degree} - {edu.field}
-                  {edu.gpa && <span> | GPA: {edu.gpa}</span>}
-                </div>
-                {edu.highlights && edu.highlights.length > 0 && (
-                  <ul className="prof-highlights">
-                    {edu.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Skills */}
-        {skills.length > 0 && (
-          <div className="prof-section">
-            <div className="prof-section-title">专业技能</div>
-            <div className="prof-skills-grid">
-              {skills.map((group, i) => (
-                <div key={i} className="prof-skill-group">
-                  <span className="prof-skill-category">{group.category}: </span>
-                  <span className="prof-skill-items">{group.items.join(', ')}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Projects */}
-        {projects.length > 0 && (
-          <div className="prof-section">
-            <div className="prof-section-title">项目经验</div>
-            {projects.map((proj, i) => (
-              <div key={i} className="prof-entry">
-                <div className="prof-entry-header">
-                  <span className="prof-entry-main">
-                    {proj.name}
-                    {proj.role && <span style={{ fontWeight: 400, color: '#444' }}> - {proj.role}</span>}
-                  </span>
-                  {(proj.start_date || proj.end_date) && (
-                    <span className="prof-entry-date">
-                      {proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}
-                    </span>
-                  )}
-                </div>
-                <div className="prof-entry-sub">{proj.description}</div>
-                {proj.highlights.length > 0 && (
-                  <ul className="prof-highlights">
-                    {proj.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                  </ul>
-                )}
-                {proj.tech_stack && proj.tech_stack.length > 0 && (
-                  <div className="prof-tech-stack">Tech: {proj.tech_stack.join(' / ')}</div>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Certifications */}
-        {certifications.length > 0 && (
-          <div className="prof-section">
-            <div className="prof-section-title">证书与奖项</div>
-            {certifications.map((cert, i) => (
-              <div key={i} className="prof-cert-item">
-                <span className="prof-cert-name">{cert.name}</span>
-                {(cert.issuer || cert.date) && (
-                  <span className="prof-cert-detail">
-                    {cert.issuer && ` - ${cert.issuer}`}
-                    {cert.date && ` (${cert.date})`}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Custom Sections */}
-        {custom_sections && custom_sections.length > 0 && custom_sections.map((section, i) => (
-          <div key={i} className="prof-section">
-            <div className="prof-section-title">{section.title}</div>
-            <div className="prof-custom-content">{section.content}</div>
-          </div>
-        ))}
+        {sections.map(section => {
+          if (section === 'summary') return renderSummary()
+          if (section === 'work_experience') return renderWorkExperience()
+          if (section === 'education') return renderEducation()
+          if (section === 'skills') return renderSkills()
+          if (section === 'projects') return renderProjects()
+          if (section === 'certifications') return renderCertifications()
+          if (section === 'custom_sections') return renderCustomSections()
+          return null
+        })}
       </div>
     </div>
   )

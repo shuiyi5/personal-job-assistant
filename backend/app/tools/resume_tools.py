@@ -1,5 +1,6 @@
 """简历工具 - 段落生成、格式化、导出 (结构化 JSON 输出)"""
 
+import asyncio
 from typing import Any
 
 from app.schemas.resume import ResumeData
@@ -112,6 +113,34 @@ class FormatResumeTool(BaseTool):
         return _flatten_schema(ResumeData.model_json_schema())
 
     async def execute(self, **kwargs) -> str:
+        # 若调用方未指定 module_order，自动从 JSON 配置文件读取已保存的顺序
+        if not kwargs.get('module_order'):
+            import json as _json
+            from pathlib import Path
+
+            config_path = Path("./data/settings.json")
+            if config_path.exists():
+                try:
+                    def _read_config():
+                        return config_path.read_text(encoding="utf-8")
+                    text = await asyncio.to_thread(_read_config)
+                    cfg = _json.loads(text)
+                    order_str = cfg.get("module_order", "")
+                    if order_str:
+                        kwargs["module_order"] = _json.loads(order_str)
+                except Exception:
+                    pass
+
+            # 如果 JSON 里也没有，尝试从 settings 的 module_order 配置读
+            if not kwargs.get("module_order"):
+                try:
+                    from app.config.settings import settings
+                    mo = getattr(settings, "module_order", None)
+                    if mo:
+                        kwargs["module_order"] = mo
+                except Exception:
+                    pass
+
         data = ResumeData(**kwargs)
         return data.model_dump_json(ensure_ascii=False)
 
@@ -176,8 +205,19 @@ class UpdateModuleOrderTool(BaseTool):
         }
 
     async def execute(self, module_order: list) -> dict:
-        import json
+        import asyncio, json
         from app.api.settings_api import _save_config, _reload_settings
-        _save_config({"module_order": json.dumps(module_order, ensure_ascii=False)})
-        _reload_settings()
+
+        # 验证模块顺序列表
+        VALID_MODULES = {"personal", "summary", "work_experience", "education", "projects", "skills", "certifications"}
+        invalid = [m for m in module_order if m not in VALID_MODULES]
+        if invalid:
+            return {"status": "error", "message": f"无效的模块: {invalid}，有效模块: {list(VALID_MODULES)}"}
+
+        # 在线程池中执行阻塞 I/O，避免阻塞事件循环
+        def _do_save():
+            _save_config({"module_order": json.dumps(module_order, ensure_ascii=False)})
+            _reload_settings()
+
+        await asyncio.to_thread(_do_save)
         return {"status": "ok", "module_order": module_order, "message": f"模块顺序已更新: {' → '.join(module_order)}"}

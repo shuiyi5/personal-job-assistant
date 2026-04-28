@@ -11,7 +11,7 @@ export default api
 export async function fetchSSE(
   url: string,
   body: Record<string, unknown>,
-  onEvent: (event: { type: string; content?: string; tool?: string; input?: Record<string, unknown> }) => void,
+  onEvent: (event: Record<string, unknown>) => void,
 ): Promise<void> {
   const response = await fetch(`/api${url}`, {
     method: 'POST',
@@ -31,17 +31,23 @@ export async function fetchSSE(
     if (done) break
 
     buffer += decoder.decode(value, { stream: true })
-    const lines = buffer.split('\n')
+
+    // 切割 SSE 行（兼容 \n 和 \r\n）
+    const lines = buffer.split(/\r?\n/)
+    // 最后一行可能不完整，留到下次处理
     buffer = lines.pop() || ''
 
-    for (const line of lines) {
-      if (line.startsWith('data: ')) {
-        try {
-          const data = JSON.parse(line.slice(6))
-          onEvent(data)
-        } catch {
-          // skip malformed JSON
-        }
+    for (const rawLine of lines) {
+      // 去除可能的 \r（某些 HTTP 实现会残留）
+      const line = rawLine.replace(/\r$/, '')
+      if (!line.startsWith('data: ')) continue
+      const jsonStr = line.slice(6).trim()
+      if (!jsonStr) continue
+      try {
+        const data = JSON.parse(jsonStr)
+        onEvent(data)
+      } catch {
+        // skip malformed JSON
       }
     }
   }

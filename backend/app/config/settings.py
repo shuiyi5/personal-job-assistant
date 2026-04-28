@@ -6,9 +6,9 @@ from pydantic_settings import BaseSettings
 
 
 class Settings(BaseSettings):
-    # LLM 提供商
-    llm_provider: str = "claude"
-    llm_model: str = "claude-sonnet-4-20250514"
+    # LLM 提供商（切换到 moonshot/kimi 以支持真正的流式 tool_calls）
+    llm_provider: str = "moonshot"
+    llm_model: str = "moonshot-v1-8k"
 
     # --- API Keys ---
     anthropic_api_key: str = ""
@@ -72,8 +72,10 @@ class Settings(BaseSettings):
     # 应用
     debug: bool = True
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    module_order: str = ""  # 简历模块顺序（JSON 数组字符串）
     upload_dir: str = "./data/uploads"
     max_upload_size_mb: int = 20
+    resume_edit_mode: str = "panel"  # 简历编辑跳转方式: panel=右侧面板, newtab=新标签页
 
     @property
     def cors_origins_list(self) -> list[str]:

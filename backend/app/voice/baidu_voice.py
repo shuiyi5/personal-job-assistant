@@ -2,6 +2,7 @@
 
 import base64
 import json
+from typing import Optional
 
 import httpx
 
@@ -18,7 +19,7 @@ class BaiduSTT(STTProvider):
     def __init__(self):
         self._api_key = settings.baidu_api_key
         self._secret_key = settings.baidu_secret_key
-        self._token: str | None = None
+        self._token: Optional[str] = None
         self._client = httpx.AsyncClient(timeout=30)
 
     async def _get_token(self) -> str:
@@ -74,7 +75,7 @@ class BaiduTTS(TTSProvider):
     def __init__(self):
         self._api_key = settings.baidu_api_key
         self._secret_key = settings.baidu_secret_key
-        self._token: str | None = None
+        self._token: Optional[str] = None
         self._client = httpx.AsyncClient(timeout=30)
 
     async def _get_token(self) -> str:

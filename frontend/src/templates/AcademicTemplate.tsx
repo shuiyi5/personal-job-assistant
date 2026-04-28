@@ -5,8 +5,24 @@ export interface TemplateProps {
   scale?: number
 }
 
+const DEFAULT_MODULE_ORDER = ['summary', 'education', 'work_experience', 'projects', 'skills', 'certifications', 'custom_sections']
+
+const SectionLabels: Record<string, string> = {
+  summary: '个人简介',
+  work_experience: '工作经历',
+  education: '教育背景',
+  skills: '专业技能',
+  projects: '项目经验',
+  certifications: '证书与奖项',
+  custom_sections: '自定义章节',
+}
+
 const AcademicTemplate = ({ data, scale = 1 }: TemplateProps) => {
-  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections } = data
+  const { personal, summary, work_experience, education, skills, projects, certifications, custom_sections, module_order } = data
+
+  const sections: string[] = module_order && module_order.length > 0
+    ? module_order.filter(s => DEFAULT_MODULE_ORDER.includes(s))
+    : DEFAULT_MODULE_ORDER
 
   const contactParts: string[] = []
   if (personal.email) contactParts.push(personal.email)
@@ -212,135 +228,107 @@ const AcademicTemplate = ({ data, scale = 1 }: TemplateProps) => {
         <div className="acad-header-line" />
       </div>
 
-      {/* Summary */}
-      {summary && (
-        <div className="acad-section">
-          <div className="acad-section-title">个人简介</div>
-          <div className="acad-summary">{summary}</div>
-        </div>
-      )}
-
-      {/* Education (first for academic CV) */}
-      {education.length > 0 && (
-        <div className="acad-section">
-          <div className="acad-section-title">教育背景</div>
-          {education.map((edu, i) => (
-            <div key={i} className="acad-entry">
-              <div className="acad-entry-header">
-                <span className="acad-entry-main">{edu.institution}</span>
-                <span className="acad-entry-date">{edu.start_date} - {edu.end_date}</span>
-              </div>
-              <div className="acad-entry-sub">
-                {edu.degree}, {edu.field}
-                {edu.gpa && ` — GPA: ${edu.gpa}`}
-              </div>
-              {edu.highlights && edu.highlights.length > 0 && (
-                <ul className="acad-highlights">
-                  {edu.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Work Experience */}
-      {work_experience.length > 0 && (
-        <div className="acad-section">
-          <div className="acad-section-title">工作经历</div>
-          {work_experience.map((exp, i) => (
-            <div key={i} className="acad-entry">
-              <div className="acad-entry-header">
-                <span className="acad-entry-main">{exp.company}</span>
-                <span className="acad-entry-date">{exp.start_date} - {exp.end_date}</span>
-              </div>
-              <div className="acad-entry-sub">
-                {exp.title}
-                {exp.location && `, ${exp.location}`}
-              </div>
-              {exp.highlights.length > 0 && (
-                <ul className="acad-highlights">
-                  {exp.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                </ul>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Projects */}
-      {projects.length > 0 && (
-        <div className="acad-section">
-          <div className="acad-section-title">项目经验</div>
-          {projects.map((proj, i) => (
-            <div key={i} className="acad-entry">
-              <div className="acad-entry-header">
-                <span className="acad-entry-main">
-                  {proj.name}
-                  {proj.role && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> ({proj.role})</span>}
-                </span>
-                {(proj.start_date || proj.end_date) && (
-                  <span className="acad-entry-date">
-                    {proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}
-                  </span>
-                )}
-              </div>
-              <div className="acad-entry-desc">{proj.description}</div>
-              {proj.highlights.length > 0 && (
-                <ul className="acad-highlights">
-                  {proj.highlights.map((h, j) => <li key={j}>{h}</li>)}
-                </ul>
-              )}
-              {proj.tech_stack && proj.tech_stack.length > 0 && (
-                <div className="acad-tech-stack">Technologies: {proj.tech_stack.join(', ')}</div>
-              )}
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Skills */}
-      {skills.length > 0 && (
-        <div className="acad-section">
-          <div className="acad-section-title">专业技能</div>
-          <div className="acad-skills-list">
-            {skills.map((group, i) => (
-              <div key={i} className="acad-skill-group">
-                <span className="acad-skill-category">{group.category}: </span>
-                <span className="acad-skill-items">{group.items.join(', ')}</span>
-              </div>
-            ))}
+      {/* Dynamic sections */}
+      {sections.map(section => {
+        if (section === 'summary' && summary) return (
+          <div key="summary" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.summary}</div>
+            <div className="acad-summary">{summary}</div>
           </div>
-        </div>
-      )}
-
-      {/* Certifications */}
-      {certifications.length > 0 && (
-        <div className="acad-section">
-          <div className="acad-section-title">证书与奖项</div>
-          <div className="acad-cert-list">
-            {certifications.map((cert, i) => (
-              <div key={i} className="acad-cert-item">
-                {cert.name}
-                {(cert.issuer || cert.date) && (
-                  <span className="acad-cert-detail">
-                    {cert.issuer && ` — ${cert.issuer}`}
-                    {cert.date && `, ${cert.date}`}
-                  </span>
+        )
+        if (section === 'education' && education.length > 0) return (
+          <div key="education" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.education}</div>
+            {education.map((edu, i) => (
+              <div key={i} className="acad-entry">
+                <div className="acad-entry-header">
+                  <span className="acad-entry-main">{edu.institution}</span>
+                  <span className="acad-entry-date">{edu.start_date} - {edu.end_date}</span>
+                </div>
+                <div className="acad-entry-sub">{edu.degree}, {edu.field}{edu.gpa && ` — GPA: ${edu.gpa}`}</div>
+                {edu.highlights && edu.highlights.length > 0 && (
+                  <ul className="acad-highlights">{edu.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
                 )}
               </div>
             ))}
           </div>
-        </div>
-      )}
-
-      {/* Custom Sections */}
-      {custom_sections && custom_sections.length > 0 && custom_sections.map((section, i) => (
-        <div key={i} className="acad-section">
-          <div className="acad-section-title">{section.title}</div>
-          <div className="acad-custom-content">{section.content}</div>
-        </div>
-      ))}
+        )
+        if (section === 'work_experience' && work_experience.length > 0) return (
+          <div key="work_experience" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.work_experience}</div>
+            {work_experience.map((exp, i) => (
+              <div key={i} className="acad-entry">
+                <div className="acad-entry-header">
+                  <span className="acad-entry-main">{exp.company}</span>
+                  <span className="acad-entry-date">{exp.start_date} - {exp.end_date}</span>
+                </div>
+                <div className="acad-entry-sub">{exp.title}{exp.location && `, ${exp.location}`}</div>
+                {exp.highlights.length > 0 && (
+                  <ul className="acad-highlights">{exp.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+        if (section === 'projects' && projects.length > 0) return (
+          <div key="projects" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.projects}</div>
+            {projects.map((proj, i) => (
+              <div key={i} className="acad-entry">
+                <div className="acad-entry-header">
+                  <span className="acad-entry-main">{proj.name}{proj.role && <span style={{ fontWeight: 400, fontStyle: 'italic' }}> ({proj.role})</span>}</span>
+                  {(proj.start_date || proj.end_date) && (
+                    <span className="acad-entry-date">{proj.start_date}{proj.start_date && proj.end_date && ' - '}{proj.end_date}</span>
+                  )}
+                </div>
+                <div className="acad-entry-desc">{proj.description}</div>
+                {proj.highlights.length > 0 && (
+                  <ul className="acad-highlights">{proj.highlights.map((h, j) => <li key={j}>{h}</li>)}</ul>
+                )}
+                {proj.tech_stack && proj.tech_stack.length > 0 && (
+                  <div className="acad-tech-stack">Technologies: {proj.tech_stack.join(', ')}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        )
+        if (section === 'skills' && skills.length > 0) return (
+          <div key="skills" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.skills}</div>
+            <div className="acad-skills-list">
+              {skills.map((group, i) => (
+                <div key={i} className="acad-skill-group">
+                  <span className="acad-skill-category">{group.category}: </span>
+                  <span className="acad-skill-items">{group.items.join(', ')}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+        if (section === 'certifications' && certifications.length > 0) return (
+          <div key="certifications" className="acad-section">
+            <div className="acad-section-title">{SectionLabels.certifications}</div>
+            <div className="acad-cert-list">
+              {certifications.map((cert, i) => (
+                <div key={i} className="acad-cert-item">
+                  {cert.name}{(cert.issuer || cert.date) && <span className="acad-cert-detail">{cert.issuer && ` — ${cert.issuer}`}{cert.date && `, ${cert.date}`}</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )
+        if (section === 'custom_sections' && custom_sections && custom_sections.length > 0) return (
+          <div key="custom_sections">
+            {custom_sections.map((sec, i) => (
+              <div key={i} className="acad-section">
+                <div className="acad-section-title">{sec.title}</div>
+                <div className="acad-custom-content">{sec.content}</div>
+              </div>
+            ))}
+          </div>
+        )
+        return null
+      })}
     </div>
   )
 }

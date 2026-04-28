@@ -1,6 +1,7 @@
 """检索器 - 查询嵌入 → 向量搜索 → 过滤 → 上下文组装"""
 
 from dataclasses import dataclass
+from typing import Optional
 
 from app.models.base import get_embedding_provider
 from app.rag.store import query_documents
@@ -18,7 +19,7 @@ async def retrieve(
     query: str,
     top_k: int = 5,
     score_threshold: float = 0.3,
-    doc_type: str | None = None,
+    doc_type: Optional[str] = None,
 ) -> list[RetrievalResult]:
     """
     检索管线:

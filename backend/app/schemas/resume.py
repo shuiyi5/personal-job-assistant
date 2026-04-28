@@ -8,7 +8,7 @@ from pydantic import BaseModel
 # ── 结构化简历数据模型 ──────────────────────────────────────
 
 class PersonalInfo(BaseModel):
-    name: str
+    name: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
     location: Optional[str] = None
@@ -74,6 +74,7 @@ class ResumeData(BaseModel):
     projects: list[Project] = []
     certifications: list[Certification] = []
     custom_sections: list[CustomSection] = []
+    module_order: list[str] = []  # 模块显示顺序，空列表表示使用模板默认顺序
 
 
 # ── 请求模型 ──────────────────────────────────────

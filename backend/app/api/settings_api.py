@@ -143,6 +143,7 @@ class SettingsResponse(BaseModel):
     llm_model: str
     providers: dict
     module_order: list[str]
+    resume_edit_mode: str = "panel"
 
 
 class SettingsUpdate(BaseModel):
@@ -150,6 +151,7 @@ class SettingsUpdate(BaseModel):
     llm_model: Optional[str] = None
     env_vars: Optional[dict[str, str]] = None
     module_order: Optional[list[str]] = None
+    resume_edit_mode: Optional[str] = None
 
 
 # ── Endpoints ────────────────────────────────────────
@@ -183,7 +185,7 @@ async def get_current_settings() -> SettingsResponse:
     else:
         module_order = ["personal", "summary", "work_experience", "education", "projects", "skills", "certifications"]
 
-    return SettingsResponse(llm_provider=provider, llm_model=model, providers=providers, module_order=module_order)
+    return SettingsResponse(llm_provider=provider, llm_model=model, providers=providers, module_order=module_order, resume_edit_mode=env.get("resume_edit_mode", "panel"))
 
 
 @router.put("/settings")
@@ -203,6 +205,8 @@ async def update_settings(req: SettingsUpdate) -> dict:
     if req.module_order is not None:
         import json
         updates["module_order"] = json.dumps(req.module_order, ensure_ascii=False)
+    if req.resume_edit_mode is not None:
+        updates["resume_edit_mode"] = req.resume_edit_mode
 
     if updates:
         _save_config(updates)

@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react'
 import ReactMarkdown from 'react-markdown'
-import { Send, Loader2, CheckCircle2, XCircle, Terminal, ChevronDown, ChevronRight, Paperclip, Bot, Plus, X, PanelRightClose } from 'lucide-react'
+import { Send, Loader2, CheckCircle2, XCircle, Terminal, ChevronDown, ChevronRight, Paperclip, Bot, Plus, X, PanelRightClose, Square } from 'lucide-react'
 import { useChatStore, type ToolCall, type PageContext } from '../../stores/chatStore'
+import { useNavigate } from 'react-router-dom'
 
 const TOOL_LABELS: Record<string, string> = {
   search_knowledge_base: '搜索知识库', list_documents: '列出文档', delete_document: '删除文档',
@@ -46,11 +47,12 @@ function MiniToolBlock({ call }: { call: ToolCall }) {
 
 export default function AgentPanel() {
   const {
-    sessions, activeSessionId, isLoading, pageContext, panelVisible,
+    sessions, activeSessionId, isLoading, isPaused, pageContext, panelVisible,
     setPanelVisible, createSession, switchSession, deleteSession,
-    sendMessage, currentMessages,
+    sendMessage, currentMessages, abortMessage,
   } = useChatStore()
 
+  const navigate = useNavigate()
   const messages = currentMessages()
   const [input, setInput] = useState('')
   const [files, setFiles] = useState<File[]>([])
@@ -61,6 +63,21 @@ export default function AgentPanel() {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' })
   }, [messages])
+
+  // 监听 Agent 生成的简历事件，导航到简历编辑页
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const resumeData = (e as CustomEvent).detail
+      // 设置到 resumeStore 并导航
+      import('../../stores/resumeStore').then(({ useResumeStore }) => {
+        useResumeStore.getState().setPendingResumeData(resumeData)
+        useChatStore.getState().setPendingResumeData(resumeData)
+      })
+      navigate('/resume?from=agent&edit=true')
+    }
+    window.addEventListener('agent:resume-generated', handler)
+    return () => window.removeEventListener('agent:resume-generated', handler)
+  }, [navigate])
 
   const handleSend = () => {
     const text = input.trim()
@@ -103,6 +120,15 @@ export default function AgentPanel() {
             {isLoading && <Loader2 size={11} className="animate-spin text-blue-500" />}
           </div>
           <div className="flex items-center gap-1">
+            {(isLoading || isPaused) && (
+              <button
+                onClick={abortMessage}
+                className="text-orange-500 hover:text-orange-600 p-0.5 rounded hover:bg-orange-50"
+                title={isPaused ? '已暂停，点击继续' : '暂停'}
+              >
+                {isPaused ? <Loader2 size={14} className="animate-spin" /> : <Square size={14} />}
+              </button>
+            )}
             <button onClick={() => createSession()} className="text-gray-400 hover:text-gray-600 p-0.5 rounded hover:bg-gray-100" title="新建对话">
               <Plus size={14} />
             </button>
@@ -219,17 +245,17 @@ export default function AgentPanel() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend() } }}
-            placeholder="输入指令..."
+            placeholder={isPaused ? '已暂停输入，继续对话...' : '输入指令...'}
             rows={1}
             className="flex-1 text-xs border rounded-lg px-2.5 py-1.5 resize-none focus:outline-none focus:ring-1 focus:ring-primary-500"
-            disabled={isLoading}
+            disabled={isLoading && !isPaused}
           />
           <button
             onClick={handleSend}
-            disabled={isLoading || (!input.trim() && files.length === 0)}
+            disabled={(!input.trim() && files.length === 0) || (isLoading && !isPaused)}
             className="bg-primary-500 text-white p-1.5 rounded-lg disabled:opacity-40"
           >
-            <Send size={12} />
+            {isPaused ? <Loader2 size={12} className="animate-spin" /> : <Send size={12} />}
           </button>
         </div>
       </div>

@@ -39,18 +39,23 @@ interface ChatState {
   sessions: Session[]
   activeSessionId: string
   isLoading: boolean
+  isPaused: boolean
   pageContext: PageContext
   panelVisible: boolean
+  pendingResumeData: ResumeData | null  // Agent 生成的简历，待确认
 
   // Actions
   setPageContext: (ctx: PageContext) => void
   setPanelVisible: (v: boolean) => void
+  setPaused: (v: boolean) => void
   createSession: () => string
   switchSession: (id: string) => void
   deleteSession: (id: string) => void
   renameSession: (id: string, title: string) => void
   sendMessage: (text: string, files?: File[]) => Promise<void>
+  abortMessage: () => void
   clearCurrentSession: () => void
+  setPendingResumeData: (data: ResumeData | null) => void
 
   // Getters
   currentMessages: () => Message[]
@@ -69,11 +74,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sessions: [initialSession],
   activeSessionId: initialSession.id,
   isLoading: false,
+  isPaused: false,
   pageContext: 'chat',
   panelVisible: true,
+  pendingResumeData: null,
 
   setPageContext: (ctx) => set({ pageContext: ctx }),
   setPanelVisible: (v) => set({ panelVisible: v }),
+  setPaused: (v) => set({ isPaused: v }),
+  setPendingResumeData: (data) => set({ pendingResumeData: data }),
 
   createSession: () => {
     const s = makeSession()
@@ -112,6 +121,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
         s.id === st.activeSessionId ? { ...s, messages: [] } : s
       ),
     }))
+  },
+
+  abortMessage: () => {
+    // 标记为暂停并将控制权交还给用户
+    set({ isPaused: true, isLoading: false })
   },
 
   sendMessage: async (text: string, files?: File[]) => {
@@ -189,8 +203,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       await fetchSSE('/chat', { message: messageWithContext, history, ...extraBody }, (event) => {
         // 跨 store 更新: Agent 返回 resume_data 事件时设为待确认数据（预览 → 确认）
         if (event.type === 'resume_data' && (event as unknown as { data?: ResumeData }).data) {
+          const resumeData = (event as unknown as { data: ResumeData }).data
+          // 设置到 chatStore（触发导航）和 resumeStore（用于编辑）
+          set({ pendingResumeData: resumeData })
           import('./resumeStore').then(({ useResumeStore }) => {
-            useResumeStore.getState().setPendingResumeData((event as unknown as { data: ResumeData }).data)
+            useResumeStore.getState().setPendingResumeData(resumeData)
+          }).catch(() => {})
+          // 使用自定义事件通知 App 进行导航
+          window.dispatchEvent(new CustomEvent('agent:resume-generated', { detail: resumeData }))
+        }
+        // Agent 调整模块顺序时，实时更新前端 moduleOrder 和 resumeData.module_order
+        if (event.type === 'module_order_changed' && Array.isArray((event as unknown as { module_order?: string[] }).module_order)) {
+          import('./resumeStore').then(({ useResumeStore }) => {
+            useResumeStore.getState().updateModuleOrderInData((event as unknown as { module_order: string[] }).module_order)
           }).catch(() => {})
         }
         set(st => ({
@@ -200,11 +225,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
             const last = msgs[msgs.length - 1]
             if (!last || last.role !== 'assistant') return s
 
-            if (event.type === 'text' && event.content) {
-              msgs[msgs.length - 1] = { ...last, content: last.content + event.content }
+            if (event.type === 'text' && typeof event.content === 'string') {
+              msgs[msgs.length - 1] = { ...last, content: last.content + (event.content as string) }
             } else if (event.type === 'tool_start') {
               const calls = [...(last.toolCalls || [])]
-              calls.push({ tool: event.tool || '', status: 'running', input: event.input as Record<string, unknown> })
+              calls.push({ tool: (event.tool as string) || '', status: 'running', input: (event.input as Record<string, unknown>) || {} })
               msgs[msgs.length - 1] = { ...last, toolCalls: calls }
             } else if (event.type === 'tool_result') {
               const calls = [...(last.toolCalls || [])]

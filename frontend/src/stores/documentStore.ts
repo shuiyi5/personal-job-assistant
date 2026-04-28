@@ -7,12 +7,13 @@ export interface DocInfo {
   doc_type: string
   chunk_count: number
   upload_date: string
+  is_ocr?: boolean
 }
 
 interface DocumentState {
   documents: DocInfo[]
   isUploading: boolean
-  fetchDocuments: () => Promise<void>
+  fetchDocuments: (docType?: string) => Promise<void>
   uploadDocument: (file: File, docType: string) => Promise<void>
   deleteDocument: (docId: string) => Promise<void>
 }
@@ -21,8 +22,9 @@ export const useDocumentStore = create<DocumentState>((set) => ({
   documents: [],
   isUploading: false,
 
-  fetchDocuments: async () => {
-    const res = await api.get('/documents')
+  fetchDocuments: async (docType?: string) => {
+    const params = docType ? { doc_type: docType } : {}
+    const res = await api.get('/documents', { params })
     set({ documents: res.data.documents })
   },
 
