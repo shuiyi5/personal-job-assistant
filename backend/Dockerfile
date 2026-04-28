@@ -10,10 +10,11 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# 仓库根目录上下文，requirements.txt 在 backend/ 子目录
+COPY backend/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY backend/ .
 
 # 创建数据目录
 RUN mkdir -p data/chroma_db data/uploads
