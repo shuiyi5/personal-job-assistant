@@ -56,7 +56,9 @@
       "Bash(curl -s http://localhost:8000/openapi.json)",
       "Bash(curl -s -X POST 'http://localhost:8000/api/jd/jobs/parse?raw_text=Python%E5%B7%A5%E7%A8%8B%E5%B8%88%E9%9C%80%E8%A6%81Python%E7%B2%BE%E9%80%9ADjango%E6%9C%88%E8%96%AA30k-50k%E5%B7%A5%E4%BD%9C%E5%9C%B0%E7%82%B9%E5%8C%97%E4%BA%AC' -H 'Content-Type: application/json')",
       "Bash(curl -s -X POST http://localhost:8000/api/jd/jobs/20260427203556_3f46aece/resumes -H 'Content-Type: application/json' -d '{:*)",
-      "Bash(lsof -i:8000)"
+      "Bash(lsof -i:8000)",
+      "Bash(git -C /Users/a1-6/Desktop/开发项目/personal-job-assistant remote -v)",
+      "Bash(railway whoami:*)"
     ]
   }
 }

@@ -1,0 +1,23 @@
+[railway]
+language = "python"
+buildCommand = "cd backend && pip install -r requirements.txt"
+startCommand = "cd backend && uvicorn app.main:app --host 0.0.0.0 --port $PORT"
+
+[build]
+dockerfilePath = "backend/Dockerfile"
+
+[deploy]
+region = "us-west1"
+numReplicas = 1
+
+[deploy.healthbeatPath]
+path = "/"
+interval = 30
+
+[settings]
+# 持久化目录
+persistentDirectories = ["/app/data"]
+
+[env]
+PYTHONUNBUFFERED = "1"
+PORT = "8000"
